@@ -1,9 +1,9 @@
 # automatic-poolnode-creation-script
 This script is optimized to create a pool node on ubuntu. It creates the pool if it is not created already using a new node (not the provided seed) and it also runs sugarfunge-node, sugarfunge-api and go-fula to be able to manage the pool automatically.
 
-1- It funds a new random seed account from the provided seed
-2- It uses the new account to create a pool with the region specified and the pool name is similar to region
-3- It runs node, api and go-fula to automatically manage the pool requests
+- It funds a new random seed account from the provided seed
+- It uses the new account to create a pool with the region specified and the pool name is similar to region
+- It runs node, api and go-fula to automatically manage the pool requests
 
 ### Run
 
