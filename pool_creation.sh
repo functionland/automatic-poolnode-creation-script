@@ -12,10 +12,17 @@ LOG_DIR="/var/log"
 
 # Function to generate a random 25-character password
 generate_password() {
-	echo "generating password"
-    sudo mkdir -p $(dirname "$PASSWORD_FILE")
-    sudo cat /dev/urandom | tr -dc 'A-Za-z0-9' | head -c 25 > "$PASSWORD_FILE"
+    echo "Checking if a password needs to be generated..."
+    if [ ! -f "$PASSWORD_FILE" ]; then
+        echo "Password file does not exist. Generating password..."
+        sudo mkdir -p $(dirname "$PASSWORD_FILE")
+        sudo cat /dev/urandom | tr -dc 'A-Za-z0-9' | head -c 25 > "$PASSWORD_FILE"
+        echo "Password generated and saved to $PASSWORD_FILE"
+    else
+        echo "Password file already exists. No new password generated."
+    fi
 }
+
 
 # Function to install Go 1.21 from source
 install_go() {
@@ -43,8 +50,6 @@ install_go() {
         echo "Go is already installed. Skipping installation."
     fi
 }
-
-
 
 # Function to install Rust and Cargo
 install_rust() {
@@ -128,7 +133,10 @@ setup_node_service() {
 	echo "setup_node_service at $node_service_file_path"
 	# Check if the file exists and then remove it
 	if [ -f "$node_service_file_path" ]; then
+		sudo systemctl stop sugarfunge-node.service
+		sudo systemctl disable sugarfunge-node.service
 		sudo rm "$node_service_file_path"
+		sudo systemctl daemon-reload
 		echo "Removed $node_service_file_path."
 	else
 		echo "$node_service_file_path does not exist."
@@ -178,7 +186,10 @@ setup_api_service() {
 	echo "setup_api_service at $api_service_file_path"
 	# Check if the file exists and then remove it
 	if [ -f "$api_service_file_path" ]; then
+		sudo systemctl stop sugarfunge-api.service
+		sudo systemctl disable sugarfunge-api.service
 		sudo rm "$api_service_file_path"
+		sudo systemctl daemon-reload
 		echo "Removed $api_service_file_path."
 	else
 		echo "$api_service_file_path does not exist."
@@ -228,7 +239,10 @@ setup_gofula_service() {
 	echo "setup go-fula service at $gofula_service_file_path"
 	# Check if the file exists and then remove it
 	if [ -f "$gofula_service_file_path" ]; then
+		sudo systemctl stop go-fula.service
+		sudo systemctl disable go-fula.service
 		sudo rm "$gofula_service_file_path"
+		sudo systemctl daemon-reload
 		echo "Removed $gofula_service_file_path."
 	else
 		echo "$gofula_service_file_path does not exist."
@@ -240,7 +254,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/home/$USER/go-fula/go-fula
+ExecStart=/home/$USER/go-fula/go-fula --config /home/$USER/.fula/config.yaml
 Restart=always
 RestartSec=10s
 StartLimitInterval=5min
@@ -257,40 +271,76 @@ EOF
 
 # Function to fund an account
 fund_account() {
-	echo "fund_account"
-    secret_seed=$(cat "$SECRET_DIR/secret_seed.txt")
+    echo "Checking account balance before funding..."
     account=$(cat "$SECRET_DIR/account.txt")
-    curl -X POST https://api.node3.functionyard.fula.network/account/fund \
+    
+    # Make the API request and capture the HTTP status code
+    response=$(curl -s -o /dev/null -w "%{http_code}" -X POST https://api.node3.functionyard.fula.network/account/balance \
     -H "Content-Type: application/json" \
-    -d "{\"seed\": \"$MASTER_SEED\", \"amount\": 1000000000000000000, \"to\": \"$account\"}"
+    -d "{\"account\": \"$account\"}")
+
+    # Check if the status code is anything other than 200
+    if [ "$response" != "200" ]; then
+        echo "Account is not funded or an error occurred. HTTP Status: $response. Attempting to fund account..."
+        secret_seed=$(cat "$SECRET_DIR/secret_seed.txt")
+        
+        # Fund the account
+        fund_response=$(curl -s -X POST https://api.node3.functionyard.fula.network/account/fund \
+        -H "Content-Type: application/json" \
+        -d "{\"seed\": \"$MASTER_SEED\", \"amount\": 1000000000000000000, \"to\": \"$account\"}")
+        
+        echo "Fund response: $fund_response"
+    else
+        echo "Account is already funded. HTTP Status: $response."
+    fi
 }
+
+
 
 # Function to create a pool
 create_pool() {
-	echo "create_pool"
-    seed=$(cat "$SECRET_DIR/secret_seed.txt")
-    node_peerid=$(cat "$SECRET_DIR/node_peerid.txt")
+    echo "Checking if pool already exists..."
     pool_name=$1
     region=$2
 
-    response=$(curl -X POST https://api.node3.functionyard.fula.network/fula/pool/create \
-    -H "Content-Type: application/json" \
-    -d "{\"seed\": \"$seed\", \"pool_name\": \"$pool_name\", \"peer_id\": \"$node_peerid\", \"region\": \"$region\"}")
+    # Get the list of existing pools
+    pools_response=$(curl -s -X GET https://api.node3.functionyard.fula.network/fula/pool \
+    -H "Content-Type: application/json")
 
-    pool_id=$(echo $response | jq '.pool_id')
-    echo "Pool ID: $pool_id"
+    # Check if the current region exists in the list of pools
+    if echo "$pools_response" | jq --arg region "$region" '.pools[] | select(.region == $region)' | grep -q 'pool_id'; then
+        echo "Pool for region $region already exists. No need to create a new one."
+    else
+        echo "No existing pool found for region $region. Attempting to create a new pool..."
+        seed=$(cat "$SECRET_DIR/secret_seed.txt")
+        node_peerid=$(cat "$SECRET_DIR/node_peerid.txt")
 
-    # Update the Fula config file with the pool ID
-    setup_fula_config "$pool_id"
+        # Create the pool
+        create_response=$(curl -s -X POST https://api.node3.functionyard.fula.network/fula/pool/create \
+        -H "Content-Type: application/json" \
+        -d "{\"seed\": \"$seed\", \"pool_name\": \"$pool_name\", \"peer_id\": \"$node_peerid\", \"region\": \"$region\"}")
+
+        pool_id=$(echo $create_response | jq '.pool_id')
+        echo "Created Pool ID: $pool_id"
+
+        # Update the Fula config file with the pool ID
+        setup_fula_config "$pool_id"
+    fi
 }
+
 
 # Function to setup the Fula config file
 setup_fula_config() {
-	echo "setup_fula_config"
+    echo "Setting up Fula config..."
     pool_id="$1"
-    mkdir -p /home/$USER/.fula/blox/store
-    cat > /home/$USER/.fula/config.yaml << EOF
-identity: 
+    config_path="/home/$USER/.fula/config.yaml"
+
+    # Check if the Fula config file already exists
+    if [ ! -f "$config_path" ]; then
+        mkdir -p /home/$USER/.fula/blox/store
+
+        # Create the config file if it doesn't exist
+        cat > "$config_path" << EOF
 storeDir: /home/$USER/.fula/blox/store
 poolName: "$pool_id"
 logLevel: info
@@ -317,9 +367,57 @@ ipniPublishDisabled: true
 ipniPublishInterval: 10s
 IpniPublishDirectAnnounce:
     - https://cid.contact/ingest/announce
-ipniPublisherIdentity: 
 EOF
+        echo "Fula config file created at $config_path."
+    else
+        echo "Fula config file already exists at $config_path. No changes made."
+    fi
 }
+
+verify_pool_creation() {
+    echo "Verifying pool creation..."
+    region=$1  # Pass the region as an argument to the function
+
+    # Get the list of existing pools
+    pools_response=$(curl -s -X GET https://api.node3.functionyard.fula.network/fula/pool \
+    -H "Content-Type: application/json")
+
+    # Check if the specified region exists in the list of pools
+    if echo "$pools_response" | jq --arg region "$region" '.pools[] | select(.region == $region)' | grep -q 'pool_id'; then
+        echo "Verification successful: Pool for region $region exists."
+    else
+        echo "ERROR: Verification failed: No pool found for region $region."
+    fi
+}
+
+check_services_status() {
+    echo "Checking status of services..."
+
+    # Define your services
+    declare -a services=("go-fula" "sugarfunge-node" "sugarfunge-api")
+
+    # Initialize a flag to keep track of service status
+    all_services_running=true
+
+    for service in "${services[@]}"; do
+        # Check the status of each service
+        if ! sudo systemctl is-active --quiet "$service"; then
+            echo "Error: Service $service is not running."
+            all_services_running=false
+        else
+            echo "Service $service is running."
+        fi
+    done
+
+    # Final check to see if any service wasn't running
+    if [ "$all_services_running" = false ]; then
+        echo "ERROR: One or more services are not running. Please check the logs for more details."
+    else
+        echo "All services are running as expected."
+    fi
+}
+
+
 
 cleanup() {
     echo "Cleaning up..."
@@ -355,7 +453,10 @@ main() {
 
 	# Set LIBCLANG_PATH for the user
     # echo "export LIBCLANG_PATH=/usr/lib/llvm-14/lib/" | sudo tee /etc/profile.d/libclang.sh
-	echo "export LIBCLANG_PATH=/usr/lib/llvm-14/lib/" >> ~/.profile
+	if ! grep -q 'export LIBCLANG_PATH=/usr/lib/llvm-14/lib/' ~/.profile; then
+		echo "export LIBCLANG_PATH=/usr/lib/llvm-14/lib/" >> ~/.profile
+	fi
+
 	source ~/.profile
 
     # Install Go 1.21 from source
@@ -394,6 +495,12 @@ main() {
 	cleanup
 	
 	unset MASTER_SEED
+	
+	# Verify pool creation
+	verify_pool_creation "$region"
+	
+	# Check the status of the services
+	check_services_status
 
     echo "Setup complete. Please review the logs and verify the services are running correctly."
 }
