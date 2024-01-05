@@ -107,15 +107,6 @@ setup_and_extract_keys() {
         account=$(echo "$output" | grep "SS58 Address:" | awk '{$1=$2=""; print $0}' | sed 's/^[ \t]*//;s/[ \t]*$//')
         echo "$account" > "$SECRET_DIR/account.txt"
     fi
-    if [ ! -f "$SECRET_DIR/node_key.txt" ]; then
-        output=$(./sugarfunge-node/target/release/sugarfunge-node key generate-node-key 2>&1)
-        echo "$output"
-        node_key=$(echo "$output" | tr ' ' '\n' | tail -n 1)
-        echo "$node_key" > "$SECRET_DIR/node_key.txt"
-
-        node_peerid=$(echo "$output" | head -n 1)
-        echo "$node_peerid" > "$SECRET_DIR/node_peerid.txt"
-    fi
 }
 
 # Function to insert keys into the node
@@ -247,6 +238,21 @@ setup_gofula_service() {
     else
         echo "$gofula_service_file_path does not exist."
     fi
+
+    # Initialize go-fula and extract the blox peer ID
+    init_output=$(/home/$USER/go-fula/go-fula --config /home/$USER/.fula/config.yaml --initOnly)
+    blox_peer_id=$(echo "$init_output" | grep "blox peer ID" | awk '{print $5}')
+    # Check if blox_peer_id is empty and exit with an error if it is
+    if [ -z "$blox_peer_id" ]; then
+        echo "Error: Failed to extract blox peer ID. Exiting."
+        exit 1
+    fi
+
+    echo "Extracted blox peer ID: $blox_peer_id"
+
+    # Save the blox peer ID to the file
+    echo "$blox_peer_id" > "$SECRET_DIR/node_peerid.txt"
+    echo "Blox peer ID saved to $SECRET_DIR/node_peerid.txt"
 
     # Create the service file using the provided path
     sudo bash -c "cat > '$gofula_service_file_path'" << EOF
@@ -403,6 +409,47 @@ verify_pool_creation() {
     fi
 }
 
+generate_node_key() {
+    config_path="/home/$USER/.fula/config.yaml"
+    echo "Checking identity in $config_path..."
+
+    # Check if the identity field exists and has a value
+    identity=$(yq e '.identity' "$config_path")
+    
+    if [ -z "$identity" ]; then
+        echo "Error: 'identity' field is missing or empty in $config_path."
+        exit 1
+    else
+        echo "'identity' field is present in $config_path: $identity"
+        new_key=$(/home/$USER/go-fula/go-fula --config "$config_path" --generateNodeKey | grep -E '^[a-f0-9]{64}$')
+        
+        # Check if the node_key file exists and has different content
+        if [ ! -f "$SECRET_DIR/node_key.txt" ] || [ "$new_key" != "$(cat $SECRET_DIR/node_key.txt)" ]; then
+            echo "$new_key" > "$SECRET_DIR/node_key.txt"
+            echo "Node key saved to $SECRET_DIR/node_key.txt"
+        else
+            echo "Node key file already exists and is up to date."
+        fi
+		
+		# Generate the peer ID from the node key
+        generated_peer_id=$(./target/release/sugarfunge-node key inspect-node-key --file "$SECRET_DIR/node_key.txt")
+        
+        # Read the stored peer ID from the file
+        stored_peer_id=$(cat "$SECRET_DIR/node_peerid.txt")
+
+        # Compare the generated peer ID with the stored peer ID
+        if [ "$generated_peer_id" != "$stored_peer_id" ]; then
+            echo "Error: The generated peer ID does not match the stored peer ID."
+            echo "Generated peer ID: $generated_peer_id"
+            echo "Stored peer ID: $stored_peer_id"
+            exit 1
+        else
+            echo "The generated peer ID matches the stored peer ID: $generated_peer_id"
+        fi
+    fi
+}
+
+
 check_services_status() {
     echo "Checking status of services..."
 
@@ -485,7 +532,13 @@ main() {
 
     # Generate a strong password and save it
     generate_password
-
+	
+	# Setup and start go-fula service
+    setup_gofula_service
+	
+	# Generate Peer ID for node
+	generate_node_key
+	
     # Setup and extract keys
     setup_and_extract_keys
 
@@ -503,9 +556,6 @@ main() {
 
     # Setup and start API service
     setup_api_service
-	
-	# Setup and start go-fula service
-    setup_gofula_service
 	
 	cleanup
 	
