@@ -141,7 +141,7 @@ setup_node_service() {
 	else
 		echo "$node_service_file_path does not exist."
 	fi
-    sudo bash -c 'cat > $node_service_file_path' << EOF
+    sudo bash -c "cat > '$node_service_file_path'" << EOF
 [Unit]
 Description=Sugarfunge Node
 After=network.target
@@ -194,7 +194,7 @@ setup_api_service() {
 	else
 		echo "$api_service_file_path does not exist."
 	fi
-    sudo bash -c 'cat > $api_service_file_path' << EOF
+    sudo bash -c "cat > '$api_service_file_path'" << EOF
 [Unit]
 Description=Sugarfunge API
 After=sugarfunge-node.service
@@ -247,7 +247,7 @@ setup_gofula_service() {
 	else
 		echo "$gofula_service_file_path does not exist."
 	fi
-    sudo bash -c 'cat > $gofula_service_file_path' << EOF
+    sudo bash -c "cat > '$gofula_service_file_path'" << EOF
 [Unit]
 Description=Go Fula Service
 After=network.target
