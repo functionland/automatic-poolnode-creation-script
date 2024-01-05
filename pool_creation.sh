@@ -9,6 +9,65 @@ SECRET_DIR="/home/$USER/.secrets"
 DATA_DIR="/home/$USER/data"
 LOG_DIR="/var/log"
 
+# Function to map AWS region to your custom region naming convention
+get_region_name() {
+    local aws_region=$1
+    case $aws_region in
+        us-east-1) echo "UsEastNVirginia" ;;
+        us-east-2) echo "UsEastOhio" ;;
+        us-west-1) echo "UsWestNCalifornia" ;;
+        us-west-2) echo "UsWestOregon" ;;
+        af-south-1) echo "AfricaCapeTown" ;;
+        ap-east-1) echo "AsiaPacificHongKong" ;;
+        ap-south-1) echo "AsiaPacificMumbai" ;;
+        ap-northeast-3) echo "AsiaPacificOsaka" ;;
+        ap-northeast-2) echo "AsiaPacificSeoul" ;;
+        ap-southeast-1) echo "AsiaPacificSingapore" ;;
+        ap-southeast-2) echo "AsiaPacificSydney" ;;
+        ap-northeast-1) echo "AsiaPacificTokyo" ;;
+        ca-central-1) echo "CanadaCentral" ;;
+        eu-central-1) echo "EuropeFrankfurt" ;;
+        eu-west-1) echo "EuropeIreland" ;;
+        eu-west-2) echo "EuropeLondon" ;;
+        eu-south-1) echo "EuropeMilan" ;;
+        eu-west-3) echo "EuropeParis" ;;
+        eu-north-1) echo "EuropeStockholm" ;;
+        eu-central-2) echo "EuropeZurich" ;;
+        eu-south-2) echo "EuropeSpain" ;;
+        me-central-1) echo "MiddleEastUAE" ;;
+        il-central-1) echo "IsraelTelAviv" ;;
+        sa-east-1) echo "SouthAmericaSaoPaulo" ;;
+        *) echo "" ;;
+    esac
+}
+
+# Function to get the AWS Token
+get_aws_token() {
+    echo $(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" -s)
+}
+
+# Function to get the AWS Region
+get_aws_region() {
+    local token=$1
+    echo $(curl -H "X-aws-ec2-metadata-token: $token" http://169.254.169.254/latest/meta-data/placement/region -s)
+}
+
+# Main function to find pool region on aws
+find_pool_region_aws() {
+    local token=$(get_aws_token)
+    if [ -n "$token" ]; then
+        local aws_region=$(get_aws_region "$token")
+        if [ -n "$aws_region" ]; then
+            local pool_region=$(get_region_name "$aws_region")
+            echo "$pool_region"
+        else
+            echo ""
+        fi
+    else
+        echo ""
+    fi
+}
+
 # Function to generate a random 25-character password
 generate_password() {
     echo "Checking if a password needs to be generated..."
@@ -96,7 +155,7 @@ setup_and_extract_keys() {
 	echo "setup_and_extract_keys"
     mkdir -p "$SECRET_DIR"
     if [ ! -f "$SECRET_DIR/secret_phrase.txt" ] || [ ! -f "$SECRET_DIR/secret_seed.txt" ]; then
-        output=$(./sugarfunge-node/target/release/sugarfunge-node key generate --scheme Sr25519 --password-filename="$PASSWORD_FILE" 2>&1)
+        output=$(/home/$USER/sugarfunge-node/target/release/sugarfunge-node key generate --scheme Sr25519 --password-filename="$PASSWORD_FILE" 2>&1)
         echo "$output"
         secret_phrase=$(echo "$output" | grep "Secret phrase:" | awk '{$1=$2=""; print $0}' | sed 's/^[ \t]*//;s/[ \t]*$//')
         echo "$secret_phrase" > "$SECRET_DIR/secret_phrase.txt"
@@ -113,8 +172,8 @@ setup_and_extract_keys() {
 insert_keys() {
 	echo "insert_keys"
     secret_phrase=$(cat "$SECRET_DIR/secret_phrase.txt")
-    ./sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --chain $HOME/sugarfunge-node/customSpecRaw.json --scheme Sr25519 --suri "$secret_phrase" --password-filename "$PASSWORD_FILE" --key-type aura
-    ./sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --chain $HOME/sugarfunge-node/customSpecRaw.json --scheme Ed25519 --suri "$secret_phrase" --password-filename "$PASSWORD_FILE" --key-type gran
+    /home/$USER/sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --chain $HOME/sugarfunge-node/customSpecRaw.json --scheme Sr25519 --suri "$secret_phrase" --password-filename "$PASSWORD_FILE" --key-type aura
+    /home/$USER/sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --chain $HOME/sugarfunge-node/customSpecRaw.json --scheme Ed25519 --suri "$secret_phrase" --password-filename "$PASSWORD_FILE" --key-type gran
 }
 
 # Function to set up and start node service
@@ -241,7 +300,7 @@ setup_gofula_service() {
 
     # Initialize go-fula and extract the blox peer ID
     init_output=$(/home/$USER/go-fula/go-fula --config /home/$USER/.fula/config.yaml --initOnly)
-    blox_peer_id=$(echo "$init_output" | grep "blox peer ID" | awk '{print $5}')
+    blox_peer_id=$(echo "$init_output" | awk '/blox peer ID:/ {print $NF}')
     # Check if blox_peer_id is empty and exit with an error if it is
     if [ -z "$blox_peer_id" ]; then
         echo "Error: Failed to extract blox peer ID. Exiting."
@@ -251,6 +310,7 @@ setup_gofula_service() {
     echo "Extracted blox peer ID: $blox_peer_id"
 
     # Save the blox peer ID to the file
+	mkdir -p "$SECRET_DIR"
     echo "$blox_peer_id" > "$SECRET_DIR/node_peerid.txt"
     echo "Blox peer ID saved to $SECRET_DIR/node_peerid.txt"
 
@@ -412,9 +472,10 @@ verify_pool_creation() {
 generate_node_key() {
     config_path="/home/$USER/.fula/config.yaml"
     echo "Checking identity in $config_path..."
+	sudo chmod +r /home/ubuntu/.fula/config.yaml
 
     # Check if the identity field exists and has a value
-    identity=$(yq e '.identity' "$config_path")
+    identity=$(python3 -c "import yaml; print(yaml.safe_load(open('/home/ubuntu/.fula/config.yaml'))['identity'])")
     
     if [ -z "$identity" ]; then
         echo "Error: 'identity' field is missing or empty in $config_path."
@@ -432,7 +493,7 @@ generate_node_key() {
         fi
 		
 		# Generate the peer ID from the node key
-        generated_peer_id=$(./target/release/sugarfunge-node key inspect-node-key --file "$SECRET_DIR/node_key.txt")
+        generated_peer_id=$(/home/$USER/sugarfunge-node/target/release/sugarfunge-node key inspect-node-key --file "$SECRET_DIR/node_key.txt")
         
         # Read the stored peer ID from the file
         stored_peer_id=$(cat "$SECRET_DIR/node_peerid.txt")
@@ -495,23 +556,35 @@ cleanup() {
 main() {
 	# Set DEBIAN_FRONTEND to noninteractive to avoid interactive prompts
     export DEBIAN_FRONTEND=noninteractive
+	echo "\$nrconf{restart} = 'a';" | sudo tee /etc/needrestart/needrestart.conf
 	
-    # Check if a region is provided
-    if [ $# -lt 2 ]; then
-        echo "Please provide 1:MASTER seed and 2:region as arguments."
+    # Check if a master seed is provided
+    if [ $# -lt 1 ]; then
+        echo "Please provide at least the MASTER seed as an argument."
         exit 1
     fi
 	
 	export MASTER_SEED=$1
 
-    region=$2
+    if [ $# -eq 1 ]; then
+        # Only one argument provided, find the region automatically
+        region=$(find_pool_region_aws)
+		echo "region was determined from aws instance: $region"
+        if [ -z "$region" ]; then
+            echo "Could not determine the region automatically. Please provide the region as a second argument."
+            exit 1
+        fi
+    else
+        # Region provided as second argument
+        region=$2
+    fi
     pool_name=$(echo "$region" | sed -e 's/\([A-Z]\)/ \1/g' -e 's/^ //')
 	
 	echo "creating region=$region and pool_name=$pool_name"
 	
     # Update and install dependencies
     sudo apt update
-    sudo apt install -y wget git curl build-essential jq pkg-config libssl-dev protobuf-compiler llvm libclang-dev clang plocate cmake 
+    sudo apt install -y wget git curl build-essential jq pkg-config libssl-dev protobuf-compiler llvm libclang-dev clang plocate cmake
 
 	# Set LIBCLANG_PATH for the user
     # echo "export LIBCLANG_PATH=/usr/lib/llvm-14/lib/" | sudo tee /etc/profile.d/libclang.sh
@@ -565,7 +638,7 @@ main() {
 	verify_pool_creation "$region"
 	
 	# Check the status of the services
-	sleep 5
+	sleep 10
 	check_services_status
 
     echo "Setup complete. Please review the logs and verify the services are running correctly."
