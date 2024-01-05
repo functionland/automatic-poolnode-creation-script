@@ -3,7 +3,6 @@
 set -e
 
 # Variables
-export MASTER_SEED=""
 USER="ubuntu"
 PASSWORD_FILE="/home/$USER/password.txt"
 SECRET_DIR="/home/$USER/.secrets"
@@ -235,18 +234,21 @@ EOF
 
 # Function to set up and start go-fula service
 setup_gofula_service() {
-	gofula_service_file_path="/etc/systemd/system/go-fula.service"
-	echo "setup go-fula service at $gofula_service_file_path"
-	# Check if the file exists and then remove it
-	if [ -f "$gofula_service_file_path" ]; then
-		sudo systemctl stop go-fula.service
-		sudo systemctl disable go-fula.service
-		sudo rm "$gofula_service_file_path"
-		sudo systemctl daemon-reload
-		echo "Removed $gofula_service_file_path."
-	else
-		echo "$gofula_service_file_path does not exist."
-	fi
+    gofula_service_file_path="/etc/systemd/system/go-fula.service"
+    echo "Setting up go-fula service at $gofula_service_file_path"
+
+    # Check if the file exists and then remove it
+    if [ -f "$gofula_service_file_path" ]; then
+        sudo systemctl stop go-fula.service
+        sudo systemctl disable go-fula.service
+        sudo rm "$gofula_service_file_path"
+        sudo systemctl daemon-reload
+        echo "Removed $gofula_service_file_path."
+    else
+        echo "$gofula_service_file_path does not exist."
+    fi
+
+    # Create the service file using the provided path
     sudo bash -c "cat > '$gofula_service_file_path'" << EOF
 [Unit]
 Description=Go Fula Service
@@ -254,6 +256,7 @@ After=network.target
 
 [Service]
 Type=simple
+Environment=HOME=/home/$USER
 ExecStart=/home/$USER/go-fula/go-fula --config /home/$USER/.fula/config.yaml
 Restart=always
 RestartSec=10s
@@ -264,10 +267,13 @@ StartLimitBurst=4
 WantedBy=multi-user.target
 EOF
 
+    # Reload systemd and enable the service
     sudo systemctl daemon-reload
     sudo systemctl enable go-fula.service
     sudo systemctl start go-fula.service
+    echo "Go-fula service has been set up and started."
 }
+
 
 # Function to fund an account
 fund_account() {
@@ -315,16 +321,23 @@ create_pool() {
         seed=$(cat "$SECRET_DIR/secret_seed.txt")
         node_peerid=$(cat "$SECRET_DIR/node_peerid.txt")
 
-        # Create the pool
-        create_response=$(curl -s -X POST https://api.node3.functionyard.fula.network/fula/pool/create \
+        # Capture the HTTP status code while creating the pool
+        create_response=$(curl -s -o response.json -w "%{http_code}" -X POST https://api.node3.functionyard.fula.network/fula/pool/create \
         -H "Content-Type: application/json" \
         -d "{\"seed\": \"$seed\", \"pool_name\": \"$pool_name\", \"peer_id\": \"$node_peerid\", \"region\": \"$region\"}")
+        
+        # Extract the pool_id from the response
+        pool_id=$(cat response.json | jq '.pool_id')
+        rm response.json  # Clean up the temporary file
 
-        pool_id=$(echo $create_response | jq '.pool_id')
-        echo "Created Pool ID: $pool_id"
-
-        # Update the Fula config file with the pool ID
-        setup_fula_config "$pool_id"
+        # Check if the pool was created successfully (HTTP status 200) and pool_id is not null
+        if [[ $create_response == 200 ]] && [[ $pool_id != null ]]; then
+            echo "Created Pool ID: $pool_id"
+            # Update the Fula config file with the pool ID
+            setup_fula_config "$pool_id"
+        else
+            echo "Failed to create the pool for region $region. HTTP Status: $create_response, Pool ID: $pool_id"
+        fi
     fi
 }
 
@@ -384,7 +397,7 @@ verify_pool_creation() {
 
     # Check if the specified region exists in the list of pools
     if echo "$pools_response" | jq --arg region "$region" '.pools[] | select(.region == $region)' | grep -q 'pool_id'; then
-        echo "Verification successful: Pool for region $region exists."
+        echo "OK Verification successful: Pool for region $region exists."
     else
         echo "ERROR: Verification failed: No pool found for region $region."
     fi
@@ -413,7 +426,7 @@ check_services_status() {
     if [ "$all_services_running" = false ]; then
         echo "ERROR: One or more services are not running. Please check the logs for more details."
     else
-        echo "All services are running as expected."
+        echo "OK All services are running as expected."
     fi
 }
 
@@ -437,12 +450,14 @@ main() {
     export DEBIAN_FRONTEND=noninteractive
 	
     # Check if a region is provided
-    if [ $# -lt 1 ]; then
-        echo "Please provide a region as an argument."
+    if [ $# -lt 2 ]; then
+        echo "Please provide 1:MASTER seed and 2:region as arguments."
         exit 1
     fi
+	
+	export MASTER_SEED=$1
 
-    region=$1
+    region=$2
     pool_name=$(echo "$region" | sed -e 's/\([A-Z]\)/ \1/g' -e 's/^ //')
 	
 	echo "creating region=$region and pool_name=$pool_name"
@@ -500,6 +515,7 @@ main() {
 	verify_pool_creation "$region"
 	
 	# Check the status of the services
+	sleep 5
 	check_services_status
 
     echo "Setup complete. Please review the logs and verify the services are running correctly."
