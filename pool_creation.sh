@@ -124,8 +124,16 @@ insert_keys() {
 
 # Function to set up and start node service
 setup_node_service() {
-	echo "setup_node_service"
-    sudo bash -c 'cat > /etc/systemd/system/sugarfunge-node.service' << EOF
+	node_service_file_path="/etc/systemd/system/sugarfunge-node.service"
+	echo "setup_node_service at $node_service_file_path"
+	# Check if the file exists and then remove it
+	if [ -f "$node_service_file_path" ]; then
+		sudo rm "$node_service_file_path"
+		echo "Removed $node_service_file_path."
+	else
+		echo "$node_service_file_path does not exist."
+	fi
+    sudo bash -c 'cat > $node_service_file_path' << EOF
 [Unit]
 Description=Sugarfunge Node
 After=network.target
@@ -143,11 +151,14 @@ ExecStart=$HOME/sugarfunge-node/target/release/sugarfunge-node \
     --rpc-cors=all \
     --rpc-methods=Unsafe \
     --rpc-external \
-    --validator \
     --name MyNode \
     --password-filename="$PASSWORD_FILE" \
-    --node-key=$(cat "$SECRET_DIR/node_key.txt")
+    --node-key=$(cat "$SECRET_DIR/node_key.txt") \
+	--bootnodes /dns4/node.functionyard.fula.network/tcp/30334/p2p/12D3KooWBeXV65svCyknCvG1yLxXVFwRxzBLqvBJnUF6W84BLugv
 Restart=always
+RestartSec=10s
+StartLimitInterval=5min
+StartLimitBurst=4
 StandardOutput=file:"$LOG_DIR/MyNode.log"
 StandardError=file:"$LOG_DIR/MyNode.err"
 
@@ -163,8 +174,16 @@ EOF
 
 # Function to set up and start API service
 setup_api_service() {
-	echo "setup_api_service"
-    sudo bash -c 'cat > /etc/systemd/system/sugarfunge-api.service' << EOF
+	api_service_file_path="/etc/systemd/system/sugarfunge-api.service"
+	echo "setup_api_service at $api_service_file_path"
+	# Check if the file exists and then remove it
+	if [ -f "$api_service_file_path" ]; then
+		sudo rm "$api_service_file_path"
+		echo "Removed $api_service_file_path."
+	else
+		echo "$api_service_file_path does not exist."
+	fi
+    sudo bash -c 'cat > $api_service_file_path' << EOF
 [Unit]
 Description=Sugarfunge API
 After=sugarfunge-node.service
@@ -175,7 +194,7 @@ Type=simple
 User=$USER
 ExecStart=$HOME/sugarfunge-api/target/release/sugarfunge-api \
     --db-uri="$DATA_DIR" \
-    --node-server ws://127.0.0.1:9946
+    --node-server ws://127.0.0.1:9944
 Environment=FULA_SUGARFUNGE_API_HOST=http://127.0.0.1:4000 \
             FULA_CONTRACT_API_HOST=https://contract-api.functionyard.fula.network \
             LABOR_TOKEN_CLASS_ID=100 \
@@ -187,6 +206,9 @@ Environment=FULA_SUGARFUNGE_API_HOST=http://127.0.0.1:4000 \
             CLAIMED_TOKEN_CLASS_ID=120 \
             CLAIMED_TOKEN_ASSET_ID=100
 Restart=always
+RestartSec=10s
+StartLimitInterval=5min
+StartLimitBurst=4
 StandardOutput=file:"$LOG_DIR/MyNodeAPI.log"
 StandardError=file:"$LOG_DIR/MyNodeAPI.err"
 
@@ -202,8 +224,16 @@ EOF
 
 # Function to set up and start go-fula service
 setup_gofula_service() {
-	echo "setup_gofula_service"
-    sudo bash -c 'cat > /etc/systemd/system/go-fula.service' << EOF
+	gofula_service_file_path="/etc/systemd/system/go-fula.service"
+	echo "setup go-fula service at $gofula_service_file_path"
+	# Check if the file exists and then remove it
+	if [ -f "$gofula_service_file_path" ]; then
+		sudo rm "$gofula_service_file_path"
+		echo "Removed $gofula_service_file_path."
+	else
+		echo "$gofula_service_file_path does not exist."
+	fi
+    sudo bash -c 'cat > $gofula_service_file_path' << EOF
 [Unit]
 Description=Go Fula Service
 After=network.target
@@ -212,6 +242,9 @@ After=network.target
 Type=simple
 ExecStart=/home/$USER/go-fula/go-fula
 Restart=always
+RestartSec=10s
+StartLimitInterval=5min
+StartLimitBurst=4
 
 [Install]
 WantedBy=multi-user.target
@@ -312,8 +345,10 @@ main() {
     fi
 
     region=$1
-    pool_name="${region// /}"
-
+    pool_name=$(echo "$region" | sed -e 's/\([A-Z]\)/ \1/g' -e 's/^ //')
+	
+	echo "creating region=$region and pool_name=$pool_name"
+	
     # Update and install dependencies
     sudo apt update
     sudo apt install -y wget git curl build-essential jq pkg-config libssl-dev protobuf-compiler llvm libclang-dev clang plocate cmake 
@@ -341,20 +376,20 @@ main() {
     # Insert keys into the node
     insert_keys
 
-    # Setup and start node service
-    setup_node_service
-
-    # Setup and start API service
-    setup_api_service
-
-    # Setup and start go-fula service
-    setup_gofula_service
-
     # Fund an account
     fund_account
 
     # Create a pool
     create_pool "$pool_name" "$region"
+	
+	# Setup and start node service
+    setup_node_service
+
+    # Setup and start API service
+    setup_api_service
+	
+	# Setup and start go-fula service
+    setup_gofula_service
 	
 	cleanup
 	
