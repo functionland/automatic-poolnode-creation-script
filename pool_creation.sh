@@ -3,7 +3,7 @@
 set -e
 
 # Variables
-MASTER_SEED="0x"
+export MASTER_SEED=""
 USER="ubuntu"
 PASSWORD_FILE="/home/$USER/password.txt"
 SECRET_DIR="/home/$USER/.secrets"
@@ -357,6 +357,8 @@ main() {
     create_pool "$pool_name" "$region"
 	
 	cleanup
+	
+	unset MASTER_SEED
 
     echo "Setup complete. Please review the logs and verify the services are running correctly."
 }
