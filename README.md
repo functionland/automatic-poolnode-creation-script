@@ -1,5 +1,5 @@
 # automatic-poolnode-creation-script
-This script is optimized to create a pool node on ubuntu on aws.
+This script is optimized to create a pool node on ubuntu on aws and it also runs sugarfunge-node, sugarfunge-api and go-fula to be able to manage the pool automatically..
 
 ### Run
 
