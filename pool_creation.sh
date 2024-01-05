@@ -11,28 +11,33 @@ LOG_DIR="/var/log"
 
 # Function to generate a random 25-character password
 generate_password() {
-    mkdir -p $(dirname "$PASSWORD_FILE")
-    cat /dev/urandom | tr -dc 'A-Za-z0-9' | head -c 25 > "$PASSWORD_FILE"
+	echo "generating password"
+    sudo mkdir -p $(dirname "$PASSWORD_FILE")
+    sudo cat /dev/urandom | tr -dc 'A-Za-z0-9' | head -c 25 > "$PASSWORD_FILE"
 }
 
 # Function to install Go 1.21 from source
 install_go() {
+	echo "Installing go"
     # Check if Go is already installed
     if ! command -v go &> /dev/null && [ ! -d "/usr/local/go" ]; then
         echo "Go is not installed. Installing Go..."
 
         # Download the pre-compiled binary of Go 1.21
-        wget https://golang.org/dl/go1.21.0.linux-amd64.tar.gz
+        sudo wget https://golang.org/dl/go1.21.0.linux-amd64.tar.gz
         sudo tar -xvf go1.21.0.linux-amd64.tar.gz
         sudo mv go /usr/local
 
-        # Set environment variables so the system knows where to find Go
-        echo "export GOROOT=/usr/local/go" | sudo tee /etc/profile.d/goenv.sh
-        echo "export PATH=\$PATH:\$GOROOT/bin" | sudo tee -a /etc/profile.d/goenv.sh
+        ### Set environment variables so the system knows where to find Go
+        # echo "export GOROOT=/usr/local/go" | sudo tee /etc/profile.d/goenv.sh
+        # echo "export PATH=\$PATH:\$GOROOT/bin" | sudo tee -a /etc/profile.d/goenv.sh
 		
-		source /etc/profile.d/goenv.sh
+		# source /etc/profile.d/goenv.sh
 		
-		sudo ln -s /usr/local/go/bin/go /usr/local/bin/go
+		# sudo ln -s /usr/local/go/bin/go /usr/local/bin/go
+		echo "export GOROOT=/usr/local/go" >> ~/.profile
+		echo "export PATH=\$PATH:\$GOROOT/bin" >> ~/.profile
+		source ~/.profile
     else
         echo "Go is already installed. Skipping installation."
     fi
@@ -42,19 +47,28 @@ install_go() {
 
 # Function to install Rust and Cargo
 install_rust() {
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+	echo "Installing rust"
+    curl https://sh.rustup.rs -sSf | sh -s -- -y
     source "$HOME/.cargo/env"
+	
+	rustup default stable
+	rustup update nightly
+	rustup update stable
+	rustup target add wasm32-unknown-unknown --toolchain nightly
+	rustup target add wasm32-unknown-unknown
 }
 
 # Function to clone and build repositories
 clone_and_build() {
+	echo "Installing sugarfunge-api"
     if [ ! -d "sugarfunge-api" ] || [ -z "$(ls -A sugarfunge-api)" ]; then
         git clone https://github.com/functionland/sugarfunge-api.git
     fi
     cd sugarfunge-api
     cargo build --release
     cd ..
-
+	
+	echo "Installing sugarfunge-node"
     if [ ! -d "sugarfunge-node" ] || [ -z "$(ls -A sugarfunge-node)" ]; then
         git clone https://github.com/functionland/sugarfunge-node.git
     fi
@@ -62,6 +76,7 @@ clone_and_build() {
     cargo build --release
     cd ..
 
+	echo "Installing go-fula"
     if [ ! -d "go-fula" ] || [ -z "$(ls -A go-fula)" ]; then
         git clone https://github.com/functionland/go-fula.git
     fi
@@ -73,6 +88,7 @@ clone_and_build() {
 
 # Function to set up and extract keys
 setup_and_extract_keys() {
+	echo "setup_and_extract_keys"
     mkdir -p "$SECRET_DIR"
     if [ ! -f "$SECRET_DIR/secret_phrase.txt" ] || [ ! -f "$SECRET_DIR/secret_seed.txt" ]; then
         output=$(./sugarfunge-node/target/release/sugarfunge-node key generate --scheme Sr25519 --password-filename="$PASSWORD_FILE" 2>&1)
@@ -99,13 +115,15 @@ setup_and_extract_keys() {
 
 # Function to insert keys into the node
 insert_keys() {
+	echo "insert_keys"
     secret_phrase=$(cat "$SECRET_DIR/secret_phrase.txt")
-    ./sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --chain ./customSpecRaw.json --scheme Sr25519 --suri "$secret_phrase" --password-filename "$PASSWORD_FILE" --key-type aura
-    ./sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --chain ./customSpecRaw.json --scheme Ed25519 --suri "$secret_phrase" --password-filename "$PASSWORD_FILE" --key-type gran
+    ./sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --chain $HOME/sugarfunge-node/customSpecRaw.json --scheme Sr25519 --suri "$secret_phrase" --password-filename "$PASSWORD_FILE" --key-type aura
+    ./sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --chain $HOME/sugarfunge-node/customSpecRaw.json --scheme Ed25519 --suri "$secret_phrase" --password-filename "$PASSWORD_FILE" --key-type gran
 }
 
 # Function to set up and start node service
 setup_node_service() {
+	echo "setup_node_service"
     sudo bash -c 'cat > /etc/systemd/system/sugarfunge-node.service' << EOF
 [Unit]
 Description=Sugarfunge Node
@@ -144,6 +162,7 @@ EOF
 
 # Function to set up and start API service
 setup_api_service() {
+	echo "setup_api_service"
     sudo bash -c 'cat > /etc/systemd/system/sugarfunge-api.service' << EOF
 [Unit]
 Description=Sugarfunge API
@@ -182,6 +201,7 @@ EOF
 
 # Function to set up and start go-fula service
 setup_gofula_service() {
+	echo "setup_gofula_service"
     sudo bash -c 'cat > /etc/systemd/system/go-fula.service' << EOF
 [Unit]
 Description=Go Fula Service
@@ -203,6 +223,7 @@ EOF
 
 # Function to fund an account
 fund_account() {
+	echo "fund_account"
     secret_seed=$(cat "$SECRET_DIR/secret_seed.txt")
     account=$(cat "$SECRET_DIR/account.txt")
     curl -X POST https://api.node3.functionyard.fula.network/account/fund \
@@ -212,6 +233,7 @@ fund_account() {
 
 # Function to create a pool
 create_pool() {
+	echo "create_pool"
     seed=$(cat "$SECRET_DIR/secret_seed.txt")
     node_peerid=$(cat "$SECRET_DIR/node_peerid.txt")
     pool_name=$1
@@ -230,6 +252,7 @@ create_pool() {
 
 # Function to setup the Fula config file
 setup_fula_config() {
+	echo "setup_fula_config"
     pool_id="$1"
     mkdir -p /home/$USER/.fula/blox/store
     cat > /home/$USER/.fula/config.yaml << EOF
@@ -270,7 +293,7 @@ cleanup() {
     # Remove Go tarball
     if [ -f "go1.21.0.linux-amd64.tar.gz" ]; then
         echo "Removing Go tarball..."
-        rm go1.21.0.linux-amd64.tar.gz
+        sudo rm go1.21.0.linux-amd64.tar.gz
     fi
 
     # Add other cleanup tasks here
@@ -278,6 +301,9 @@ cleanup() {
 
 # Main script execution
 main() {
+	# Set DEBIAN_FRONTEND to noninteractive to avoid interactive prompts
+    export DEBIAN_FRONTEND=noninteractive
+	
     # Check if a region is provided
     if [ $# -lt 1 ]; then
         echo "Please provide a region as an argument."
@@ -289,7 +315,12 @@ main() {
 
     # Update and install dependencies
     sudo apt update
-    sudo apt install -y wget git curl build-essential jq pkg-config libssl-dev
+    sudo apt install -y wget git curl build-essential jq pkg-config libssl-dev protobuf-compiler llvm libclang-dev clang plocate cmake 
+
+	# Set LIBCLANG_PATH for the user
+    # echo "export LIBCLANG_PATH=/usr/lib/llvm-14/lib/" | sudo tee /etc/profile.d/libclang.sh
+	echo "export LIBCLANG_PATH=/usr/lib/llvm-14/lib/" >> ~/.profile
+	source ~/.profile
 
     # Install Go 1.21 from source
     install_go
