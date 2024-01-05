@@ -3,6 +3,7 @@
 set -e
 
 # Variables
+MASTER_SEED="0x"
 USER="ubuntu"
 PASSWORD_FILE="/home/$USER/password.txt"
 SECRET_DIR="/home/$USER/.secrets"
@@ -228,7 +229,7 @@ fund_account() {
     account=$(cat "$SECRET_DIR/account.txt")
     curl -X POST https://api.node3.functionyard.fula.network/account/fund \
     -H "Content-Type: application/json" \
-    -d "{\"seed\": \"$secret_seed\", \"amount\": 1000000000000000000, \"to\": \"$account\"}"
+    -d "{\"seed\": \"$MASTER_SEED\", \"amount\": 1000000000000000000, \"to\": \"$account\"}"
 }
 
 # Function to create a pool
