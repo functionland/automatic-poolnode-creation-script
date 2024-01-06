@@ -58,21 +58,23 @@ peerID: 12D3Kooxxxxxxx
 nodeKey: 1xxxxxxxxxxxx
 ```
 
-Then you can run:
+Note that the above file will be automatically removed by script at the end of installation. Then you can run:
 
 ```bash
-./validator_setup.sh --password=YOUR_PASSWORD --validator=VALIDATOR_NUMBER
+./validator_setup.sh --password=YOUR_PASSWORD --validator=VALIDATOR_NUMBER --domain=DOMAIN_NAME_OPTIONAL
 ```
 
 Parameters
 
---password: A strong password for securing the node's keystore. default is a 25-character password.
+--password: [default=''] A strong password for securing the node's keystore. If not set an 25-character password will be automatically generated.
 
---validator: A unique number or identifier for the validator. This helps in naming and managing multiple validators on the same host. default to 01
+--validator: [default=01] A unique number or identifier for the validator. This helps in naming and managing multiple validators on the same host. default to 01
+
+--domain: [default=''] This is optional and if set, the script will set up the domain to be used to connect to the node. the DNS should be already set and pointing to the server. If not set the node can be used locally using 127.0.0.1 only
 
 Example
 ```bash
-./validator_setup.sh --password=VeryStrongPassword! --validator=01
+./validator_setup.sh --password=VeryStrongPassword! --validator=01 --domain=test.fx.land
 ```
 
 ### Features
