@@ -78,7 +78,7 @@ Parameters
 
 Example
 ```bash
-./validator_setup.sh --password='VeryStrongPassword$!' --validator=01 --domain=test.fx.land --bootnodes=/ip4/127.0.0.1/tcp/30334/p2p/12D3KooWBeXV65svCyknCvG1yLxXVFwRxzBLqvBJnUF6W84BLugv
+./validator_setup.sh --user=ubuntu --password='VeryStrongPassword$!' --validator=01 --domain=test.fx.land --bootnodes=/ip4/127.0.0.1/tcp/30334/p2p/12D3KooWBeXV65svCyknCvG1yLxXVFwRxzBLqvBJnUF6W84BLugv
 ```
 
 ### Features
