@@ -128,15 +128,16 @@ read_keys_from_file() {
         exit 1
     fi
 
-    while IFS= read -r line; do
-        case "$line" in
-            "Secret phrase:"*) SECRET_PHRASE="${line#*: }" ;;
-            "Secret seed:"*) SECRET_SEED="${line#*: }" ;;
-            "Public key (SS58):"*) PUBLIC_KEY_SS58="${line#*: }" ;;
-        esac
-    done < "$KEYS_INFO_PATH"
+    SECRET_PHRASE=$(awk -F': ' '/Secret phrase:/{gsub(/^[ \t]+|[ \t]+$/,"",$2); print $2}' "$KEYS_INFO_PATH")
+    SECRET_SEED=$(awk -F': ' '/Secret seed:/{gsub(/^[ \t]+|[ \t]+$/,"",$2); print $2}' "$KEYS_INFO_PATH")
+    PUBLIC_KEY_SS58=$(awk -F': ' '/Public key \(SS58\):/{gsub(/^[ \t]+|[ \t]+$/,"",$2); print $2}' "$KEYS_INFO_PATH")
+
+    echo "Secret Phrase: $SECRET_PHRASE"
+    echo "Secret Seed: $SECRET_SEED"
+    echo "Public Key (SS58): $PUBLIC_KEY_SS58"
 
     # Save the extracted values to respective files for later use
+    echo -n "$SECRET_PHRASE" > "$SECRET_DIR/secret_phrase.txt"
     echo -n "$SECRET_SEED" > "$SECRET_DIR/secret_seed.txt"
     echo -n "$PUBLIC_KEY_SS58" > "$SECRET_DIR/account.txt"
     echo -n "$PASSWORD" > "$SECRET_DIR/password.txt"
@@ -147,6 +148,7 @@ insert_keys() {
     echo "insert_keys"
     # Clear the keys directory
     sudo rm -rf "$KEYS_DIR"
+    SECRET_PHRASE=$(cat "$SECRET_DIR/secret_phrase.txt")
 
     # Insert the keys
     /home/$USER/sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --keystore-path="$KEYS_DIR" --chain "$HOME/sugarfunge-node/customSpecRaw.json" --scheme Sr25519 --suri "$SECRET_PHRASE" --password-filename "$SECRET_DIR/password.txt" --key-type aura
@@ -227,8 +229,8 @@ Requires=sugarfunge-node$NODE_NO.service
 
 [Service]
 Type=simple
-User=$USER
-ExecStart=/usr/bin/docker run --rm --name NodeAPI$NODE_NO --network host \
+User=root
+ExecStart=/usr/bin/docker run -u root --rm --name NodeAPI$NODE_NO --network host \
 -e FULA_SUGARFUNGE_API_HOST=http://127.0.0.1:$HTTP_PORT \
 -e FULA_CONTRACT_API_HOST=https://contract-api.functionyard.fula.network \
 -e LABOR_TOKEN_CLASS_ID=100 \
@@ -266,6 +268,7 @@ install_packages() {
     sudo apt-get update -qq
     sudo apt-get install -y docker.io nginx software-properties-common certbot python3-certbot-nginx
     sudo apt-get install -y wget git curl build-essential jq pkg-config libssl-dev protobuf-compiler llvm libclang-dev clang plocate cmake
+    sudo apt-get install g++ libx11-dev libasound2-dev libudev-dev libxkbcommon-x11-0
     sudo systemctl start docker
     sudo systemctl enable docker
 }
@@ -300,20 +303,26 @@ pull_docker_image_api() {
 }
 
 # Function to configure NGINX for WSS
-configure_nginx_for_wss() {
+configure_nginx() {
     echo "Configuring NGINX for HTTPS..."
+    NGINX_CONF="/etc/nginx/sites-available/default"
 
     # Create a backup of the original default config
-    sudo cp /etc/nginx/sites-available/default /etc/nginx/sites-available/default.bak
+    sudo cp $NGINX_CONF $NGINX_CONF.bak
 
-    # Write the new configuration
-    sudo bash -c 'cat > /etc/nginx/sites-available/default' << EOF
+    # Check if the domain is already in the NGINX configuration
+    if ! grep -q "$NODE_DOMAIN" "$NGINX_CONF"; then
+        echo "Adding new server configuration to NGINX..."
+
+        # Define the new server block configuration
+        NEW_SERVER_BLOCK=$(cat <<EOF
+
 server {
     listen 443 ssl;
-    server_name $NODE_DOMAIN; # Replace with your domain name
+    server_name $NODE_DOMAIN;
 
-    ssl_certificate /etc/letsencrypt/live/$NODE_DOMAIN/fullchain.pem; # Replace with your SSL certificate path
-    ssl_certificate_key /etc/letsencrypt/live/$NODE_DOMAIN/privkey.pem; # Replace with your SSL certificate key path
+    ssl_certificate /etc/letsencrypt/live/$NODE_DOMAIN/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/$NODE_DOMAIN/privkey.pem;
 
     location / {
         proxy_pass http://127.0.0.1:$HTTP_PORT;
@@ -324,10 +333,17 @@ server {
     }
 }
 EOF
+        )
 
-    # Test and reload NGINX
-    sudo nginx -t
-    sudo systemctl reload nginx
+        # Append the new server block to the NGINX configuration
+        echo "$NEW_SERVER_BLOCK" | sudo tee -a "$NGINX_CONF"
+
+        # Test and reload NGINX
+        sudo nginx -t && sudo systemctl reload nginx
+        echo "New server configuration added and NGINX reloaded."
+    else
+        echo "The server name $NODE_DOMAIN already exists in the NGINX configuration."
+    fi
 }
 
 # Function to obtain SSL certificates from Let's Encrypt
@@ -382,6 +398,33 @@ install_rust() {
 	rustup update stable
 	rustup target add wasm32-unknown-unknown --toolchain nightly
 	rustup target add wasm32-unknown-unknown
+}
+
+# Function to install Go 1.21 from source
+install_go() {
+	echo "Installing go"
+    # Check if Go is already installed
+    if ! command -v go &> /dev/null && [ ! -d "/usr/local/go" ]; then
+        echo "Go is not installed. Installing Go..."
+
+        # Download the pre-compiled binary of Go 1.21
+        sudo wget https://golang.org/dl/go1.21.0.linux-amd64.tar.gz
+        sudo tar -xvf go1.21.0.linux-amd64.tar.gz
+        sudo mv go /usr/local
+
+        ### Set environment variables so the system knows where to find Go
+        # echo "export GOROOT=/usr/local/go" | sudo tee /etc/profile.d/goenv.sh
+        # echo "export PATH=\$PATH:\$GOROOT/bin" | sudo tee -a /etc/profile.d/goenv.sh
+		
+		# source /etc/profile.d/goenv.sh
+		
+		# sudo ln -s /usr/local/go/bin/go /usr/local/bin/go
+		echo "export GOROOT=/usr/local/go" >> ~/.profile
+		echo "export PATH=\$PATH:\$GOROOT/bin" >> ~/.profile
+		source ~/.profile
+    else
+        echo "Go is already installed. Skipping installation."
+    fi
 }
 
 # Function to clone and build repositories
@@ -649,6 +692,10 @@ main() {
     echo "Installing rust"
     install_rust
 
+    # Install Go
+    echo "Installing go"
+    install_go
+
     # Clone and build the necessary repositories
     echo "Cloning and building node"
     clone_and_build_node
@@ -684,13 +731,13 @@ main() {
     # Check if NODE_DOMAIN is not empty
     local NODE_ADDRESS
     if [ "$NODE_DOMAIN" != "" ]; then
+        # Configure NGINX for WSS
+        echo "Configuring wss"
+        configure_nginx
+
         # Obtain SSL certificates from Let's Encrypt
         echo "Obtaining SSL certificate"
         obtain_ssl_certificates
-
-        # Configure NGINX for WSS
-        echo "Configuring wss"
-        configure_nginx_for_wss
 
         # Configure automatic SSL certificate renewal
         echo "Configuring cronjob for auto SSL renewal"

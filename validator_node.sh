@@ -109,17 +109,20 @@ read_keys_from_file() {
         exit 1
     fi
 
-    while IFS= read -r line; do
-        case "$line" in
-            "Secret phrase:"*) SECRET_PHRASE="${line#*: }" ;;
-            "Secret seed:"*) SECRET_SEED="${line#*: }" ;;
-            "Public key (SS58):"*) PUBLIC_KEY_SS58="${line#*: }" ;;
-            "peerID:"*) PEER_ID="${line#*: }" ;;
-            "nodeKey:"*) NODE_KEY="${line#*: }" ;;
-        esac
-    done < "$KEYS_INFO_PATH"
+    SECRET_PHRASE=$(awk -F': ' '/Secret phrase:/{gsub(/^[ \t]+|[ \t]+$/,"",$2); print $2}' "$KEYS_INFO_PATH")
+    SECRET_SEED=$(awk -F': ' '/Secret seed:/{gsub(/^[ \t]+|[ \t]+$/,"",$2); print $2}' "$KEYS_INFO_PATH")
+    PUBLIC_KEY_SS58=$(awk -F': ' '/Public key \(SS58\):/{gsub(/^[ \t]+|[ \t]+$/,"",$2); print $2}' "$KEYS_INFO_PATH")
+    PEER_ID=$(awk -F': ' '/peerID:/{gsub(/^[ \t]+|[ \t]+$/,"",$2); print $2}' "$KEYS_INFO_PATH")
+    NODE_KEY=$(awk -F': ' '/nodeKey:/{gsub(/^[ \t]+|[ \t]+$/,"",$2); print $2}' "$KEYS_INFO_PATH")
+    echo "Secret Phrase: $SECRET_PHRASE"
+    echo "Secret Seed: $SECRET_SEED"
+    echo "Public Key (SS58): $PUBLIC_KEY_SS58"
+    echo "Peer ID: $PEER_ID"
+    echo "Node Key: $NODE_KEY"
+
 
     # Save the extracted values to respective files for later use
+    echo -n "$SECRET_PHRASE" > "$SECRET_DIR/secret_phrase.txt"
     echo -n "$SECRET_SEED" > "$SECRET_DIR/secret_seed.txt"
     echo -n "$PUBLIC_KEY_SS58" > "$SECRET_DIR/account.txt"
     echo -n "$PEER_ID" > "$SECRET_DIR/node_peerid.txt"
@@ -134,6 +137,7 @@ insert_keys() {
     sudo rm -rf "$KEYS_DIR"
 
     # Insert the keys
+    SECRET_PHRASE=$(cat "$SECRET_DIR/secret_phrase.txt")
     /home/$USER/sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --keystore-path="$KEYS_DIR" --chain "$HOME/sugarfunge-node/customSpecRaw.json" --scheme Sr25519 --suri "$SECRET_PHRASE" --password-filename "$SECRET_DIR/password.txt" --key-type aura
     /home/$USER/sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --keystore-path="$KEYS_DIR" --chain "$HOME/sugarfunge-node/customSpecRaw.json" --scheme Ed25519 --suri "$SECRET_PHRASE" --password-filename "$SECRET_DIR/password.txt" --key-type gran
 }
@@ -218,11 +222,19 @@ pull_docker_images() {
 configure_nginx_for_wss() {
     echo "Configuring NGINX for WSS..."
 
-    # Create a backup of the original default config
-    sudo cp /etc/nginx/sites-available/default /etc/nginx/sites-available/default.bak
+    # Variables
+    NGINX_CONF="/etc/nginx/sites-available/default"
 
-    # Write the new configuration
-    sudo bash -c 'cat > /etc/nginx/sites-available/default' << EOF
+    # Create a backup of the original default config
+    sudo cp "$NGINX_CONF" "$NGINX_CONF.bak"
+
+    # Check if the domain is already in the NGINX configuration
+    if ! grep -q "$NODE_DOMAIN" "$NGINX_CONF"; then
+        echo "Adding new WSS server configuration to NGINX..."
+
+        # Define the new server block configuration
+        NEW_WSS_SERVER_BLOCK=$(cat <<EOF
+
 server {
     listen 443 ssl;
     server_name $NODE_DOMAIN; # Replace with your domain name
@@ -231,7 +243,7 @@ server {
     ssl_certificate_key /etc/letsencrypt/live/$NODE_DOMAIN/privkey.pem; # Replace with your SSL certificate key path
 
     location / {
-        proxy_pass http://127.0.0.1:$RPC_PORT;
+        proxy_pass http://127.0.0.1:$RPC_PORT; # Replace with the port number of your WebSocket service
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection "upgrade";
@@ -239,11 +251,19 @@ server {
     }
 }
 EOF
+        )
 
-    # Test and reload NGINX
-    sudo nginx -t
-    sudo systemctl reload nginx
+        # Append the new WSS server block to the NGINX configuration
+        echo "$NEW_WSS_SERVER_BLOCK" | sudo tee -a "$NGINX_CONF"
+
+        # Test and reload NGINX
+        sudo nginx -t && sudo systemctl reload nginx
+        echo "New WSS server configuration added and NGINX reloaded."
+    else
+        echo "The server name $NODE_DOMAIN already exists in the NGINX configuration."
+    fi
 }
+
 
 # Function to obtain SSL certificates from Let's Encrypt
 obtain_ssl_certificates() {
@@ -395,13 +415,13 @@ main() {
     # Check if NODE_DOMAIN is not empty
     local NODE_ADDRESS
     if [ "$NODE_DOMAIN" != "" ]; then
-        # Obtain SSL certificates from Let's Encrypt
-        echo "Obtaining SSL certificate"
-        obtain_ssl_certificates
-
         # Configure NGINX for WSS
         echo "Configuring wss"
         configure_nginx_for_wss
+
+        # Obtain SSL certificates from Let's Encrypt
+        echo "Obtaining SSL certificate"
+        obtain_ssl_certificates
 
         # Configure automatic SSL certificate renewal
         echo "Configuring cronjob for auto SSL renewal"
