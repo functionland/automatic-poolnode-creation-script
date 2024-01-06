@@ -29,10 +29,10 @@ while [ "$1" != "" ]; do
         --validator=*)
             VALIDATOR_NO="${1#*=}"
             ;;
-        --domain=*)
+        --user=*)
             USER="${1#*=}"
             ;;
-        --user=*)
+        --domain=*)
             NODE_DOMAIN="${1#*=}"
             ;;
         --bootnodes=*)

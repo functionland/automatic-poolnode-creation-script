@@ -34,10 +34,10 @@ while [ "$1" != "" ]; do
         --pool=*)
             POOL_ID="${1#*=}"
             ;;
-        --domain=*)
+        --user=*)
             USER="${1#*=}"
             ;;
-        --user=*)
+        --domain=*)
             NODE_DOMAIN="${1#*=}"
             ;;
         --bootnodes=*)
