@@ -72,9 +72,11 @@ Parameters
 
 --domain: [default=''] This is optional and if set, the script will set up the domain to be used to connect to the node. the DNS should be already set and pointing to the server. If not set the node can be used locally using 127.0.0.1 only
 
+--bootnodes: [default=''] You can use this parameter to provide bootstrap nodes to this node to connect to initially.
+
 Example
 ```bash
-./validator_setup.sh --password=VeryStrongPassword! --validator=01 --domain=test.fx.land
+./validator_setup.sh --password=VeryStrongPassword! --validator=01 --domain=test.fx.land --bootnodes=/ip4/127.0.0.1/tcp/30334/p2p/12D3KooWBeXV65svCyknCvG1yLxXVFwRxzBLqvBJnUF6W84BLugv
 ```
 
 ### Features
