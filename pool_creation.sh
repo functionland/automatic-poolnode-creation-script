@@ -410,7 +410,6 @@ create_pool() {
     fi
 }
 
-
 # Function to setup the Fula config file
 setup_fula_config() {
     echo "Setting up Fula config..."
@@ -418,11 +417,14 @@ setup_fula_config() {
     config_path="/home/$USER/.fula/config.yaml"
 
     # Check if the Fula config file already exists
-    if [ ! -f "$config_path" ]; then
-        mkdir -p /home/$USER/.fula/blox/store
+    mkdir -p /home/$USER/.fula/blox/store
 
-        # Create the config file if it doesn't exist
-        cat > "$config_path" << EOF
+    # Since we are initOnly and creating hte config before this step to create identity, we need to read the identity and ipniIdentity before replacing them
+    EXISTING_IPNI_PUBLISHER_IDENTITY=$(grep 'ipniPublisherIdentity:' "$config_path" | awk '{print $2}')
+    EXISTING_IDENTITY=$(grep 'identity:' "$config_path" | awk '{print $2}')
+
+    # Create the config file if it doesn't exist
+    cat > "$config_path" << EOF
 storeDir: /home/$USER/.fula/blox/store
 poolName: "$pool_id"
 logLevel: info
@@ -450,10 +452,16 @@ ipniPublishInterval: 10s
 IpniPublishDirectAnnounce:
     - https://cid.contact/ingest/announce
 EOF
-        echo "Fula config file created at $config_path."
-    else
-        echo "Fula config file already exists at $config_path. No changes made."
+
+    # Conditionally append identity and ipniPublisherIdentity if they exist
+    if [ ! -z "$EXISTING_IDENTITY" ]; then
+        echo "identity: $EXISTING_IDENTITY" >> "$config_path"
     fi
+
+    if [ ! -z "$EXISTING_IPNI_PUBLISHER_IDENTITY" ]; then
+        echo "ipniPublisherIdentity: $EXISTING_IPNI_PUBLISHER_IDENTITY" >> "$config_path"
+    fi
+    echo "Fula config file created at $config_path."
 }
 
 verify_pool_creation() {
