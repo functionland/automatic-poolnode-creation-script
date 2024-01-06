@@ -1,4 +1,6 @@
 # automatic-poolnode-creation-script
+
+## pool_creation.sh
 This script is optimized to create a pool node on ubuntu. It creates the pool if it is not created already using a new node (not the provided seed) and it also runs sugarfunge-node, sugarfunge-api and go-fula to be able to manage the pool automatically.
 
 - It funds a new random seed account from the provided seed
@@ -12,3 +14,68 @@ You can run it on an aws EC2 instance or Google cloud instance with the below co
 ```
 bash install.sh {{Seed of an account with enough Gas}} {{region name without space or special character}}
 ```
+
+## validator_node.sh
+### Functionyard Validator Node Setup Script
+
+This README provides detailed instructions for setting up a validator node for the Functionyard network using the provided setup script. The script automates the environment preparation, software installation, Docker configuration, and service management required to run a Functionyard validator node securely and efficiently.
+
+### Overview
+
+The Functionyard validator setup script is a Bash script intended for Ubuntu servers. It aims to simplify the setup process for validators participating in the Functionyard network by automating routine tasks and ensuring best practices in security and configuration.
+
+### Prerequisites
+
+- A machine running Ubuntu (18.04 or later is recommended).
+- Root or sudo access on the machine.
+- An active internet connection for downloading necessary packages and Docker images.
+
+### Usage
+
+To use the script, you must provide a password for the node's keystore and a unique identifier for the validator.
+
+```bash
+./validator_setup.sh --password=YOUR_PASSWORD --validator=VALIDATOR_NUMBER
+```
+
+Parameters
+
+--password: A strong password for securing the node's keystore.
+
+--validator: A unique number or identifier for the validator. This helps in naming and managing multiple validators on the same host.
+
+Example
+```bash
+./validator_setup.sh --password=VeryStrongPassword! --validator=01
+```
+
+### Features
+
+- Automatic Installation: Installs Docker, Nginx, Rust, and other dependencies without manual intervention.
+- Docker Management: Pulls the latest Sugarfunge Node image from the Docker Hub and configures it to run as a persistent service.
+- Secure WebSocket (WSS): Sets up Nginx and Let's Encrypt to create a secure WebSocket endpoint, enabling safe validator communications.
+- Key Management: Reads and configures validator keys from a specified file, establishing a unique identity for each validator node.
+- System Service: Registers the validator node as a system service, ensuring it automatically starts on boot and restarts after failures.
+- Logging: Directs detailed logs to specified files, aiding in monitoring and troubleshooting.
+
+### File Structure
+- validator_setup.sh: The primary script file.
+- keys01.info: An example key file. Each validator should have a unique key file, named corresponding to the validator number (e.g., - keys02.info for validator 02).
+- Security Considerations
+- Key Security: Ensure the key and password files are stored securely and accessible only to authorized personnel.
+- Script Review: Understand the script's actions before execution, particularly in production environments.
+- System Updates: Keep your system and Docker images updated to receive the latest security patches and feature improvements.
+
+## Troubleshooting
+- Permission Issues: Run the script with sufficient privileges (sudo may be necessary).
+- Docker Problems: Verify Docker's installation and operational status (systemctl status docker).
+- Service Failures: For services that fail to start, refer to the designated log files (e.g., /var/log/Node01.log) for specific error messages.
+
+## Contributing
+Your contributions are welcome. Please ensure any modifications are thoroughly tested and documented.
+
+## License
+This script is provided under the MIT License.
+
+## Support and Contact
+For support, questions, or more information about the Functionyard network, please visit Functionland Official Website or contact Functionland Support.
