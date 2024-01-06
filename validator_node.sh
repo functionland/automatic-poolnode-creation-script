@@ -2,14 +2,15 @@
 
 set -e
 
-# Parameters
-VALIDATOR_NO=""
-PASSWORD=""
-NODE_DOMAIN=""
-
 # Variables
-USER="ubuntu"
+USER="ubuntu" # <-- Modify this as needed
 EMAIL="hi@fx.land"  # <-- Modify this as needed
+RPC_PORT="9944" # <-- This will be adjusted based on VALIDATOR_NO
+
+# Parameters
+VALIDATOR_NO="" # <-- set with --validator or eliminate for 01
+PASSWORD="" # <-- set with --password  or eliminate for a random password
+NODE_DOMAIN="" # <-- set with --domain or eliminate
 
 # Function to show usage
 usage() {
@@ -37,6 +38,20 @@ if [ -z "$VALIDATOR_NO" ]; then
     VALIDATOR_NO="01"
 fi
 
+# Function to calculate the RPC port based on the validator number
+calculate_rpc_port() {
+    local base_port=9944
+    # Convert VALIDATOR_NO to a decimal number to handle leading zeros
+    local num
+    num=$(printf "%d" "$VALIDATOR_NO")
+    # Calculate the offset (subtract 1 so VALIDATOR_NO "01" corresponds to offset 0)
+    local offset=$((num - 1))
+    # Calculate and echo the RPC port
+    local rpc_port=$((base_port + offset))
+    echo $rpc_port
+}
+
+RPC_PORT=$(calculate_rpc_port)
 KEYS_INFO_PATH="/home/$USER/keys$VALIDATOR_NO.info"
 BASE_DIR="/home/$USER/.sugarfunge-node"
 SECRET_DIR="$BASE_DIR/passwords$VALIDATOR_NO"
@@ -115,7 +130,7 @@ After=network.target
 [Service]
 Type=simple
 User=root
-ExecStart=/usr/bin/docker run -u root --rm --name MyNode$VALIDATOR_NO --network host -v $SECRET_DIR/password.txt:/password.txt -v $KEYS_DIR:/keys -v $KEYS_DIR:/keys -v $DATA_DIR:/data functionland/sugarfunge-node:amd64-latest --chain /customSpecRaw.json --enable-offchain-indexing true --base-path=/data --keystore-path=/keys --port=30334 --rpc-port 9944 --rpc-cors=all --rpc-methods=Unsafe --rpc-external --validator --name Node$VALIDATOR_NO --password-filename="/password.txt" --node-key=$NODE_KEY
+ExecStart=/usr/bin/docker run -u root --rm --name MyNode$VALIDATOR_NO --network host -v $SECRET_DIR/password.txt:/password.txt -v $KEYS_DIR:/keys -v $KEYS_DIR:/keys -v $DATA_DIR:/data functionland/sugarfunge-node:amd64-latest --chain /customSpecRaw.json --enable-offchain-indexing true --base-path=/data --keystore-path=/keys --port=30334 --rpc-port $RPC_PORT --rpc-cors=all --rpc-methods=Unsafe --rpc-external --validator --name Node$VALIDATOR_NO --password-filename="/password.txt" --node-key=$NODE_KEY
 Restart=always
 RestartSec=10s
 StartLimitInterval=5min
@@ -174,7 +189,7 @@ server {
     ssl_certificate_key /etc/letsencrypt/live/$NODE_DOMAIN/privkey.pem; # Replace with your SSL certificate key path
 
     location / {
-        proxy_pass http://127.0.0.1:9944;
+        proxy_pass http://127.0.0.1:$RPC_PORT;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection "upgrade";
