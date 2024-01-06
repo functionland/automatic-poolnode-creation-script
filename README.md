@@ -33,7 +33,7 @@ The Functionyard validator setup script is a Bash script intended for Ubuntu ser
 ### Usage
 
 To use the script, you must provide a password for the node's keystore and a unique identifier for the validator.
-Also you need to store a file named keys01.info or keys02.info on your home folder with the below content:
+Also you need to store a file named keys01.info or keys02.info on your home folder (/home/user/) with the below content:
 
 ```bash
 Aura account1
@@ -58,13 +58,9 @@ peerID: 12D3Kooxxxxxxx
 nodeKey: 1xxxxxxxxxxxx
 ```
 
-Note that the above file will be automatically removed by script at the end of installation. Then you can run:
+Note that the above file will be automatically removed by script at the end of installation. Then you can run the command with required parameters
 
-```bash
-./validator_setup.sh --password='YOUR_PASSWORD' --validator=VALIDATOR_NUMBER --domain=DOMAIN_NAME_OPTIONAL
-```
-
-Parameters
+### Parameters
 
 --password: [default=''] A strong password for securing the node's keystore. If not set an 25-character password will be automatically generated. ALWAYS put hte password in single quote.
 
@@ -78,7 +74,7 @@ Parameters
 
 Example
 ```bash
-./validator_setup.sh --user=ubuntu --password='VeryStrongPassword$!' --validator=01 --domain=test.fx.land --bootnodes=/ip4/127.0.0.1/tcp/30334/p2p/12D3KooWBeXV65svCyknCvG1yLxXVFwRxzBLqvBJnUF6W84BLugv
+./validator_node.sh --user=ubuntu --password='VeryStrongPassword$!' --validator=01 --domain=test.fx.land --bootnodes=/ip4/127.0.0.1/tcp/30334/p2p/12D3KooWBeXV65svCyknCvG1yLxXVFwRxzBLqvBJnUF6W84BLugv
 ```
 
 ### Features
