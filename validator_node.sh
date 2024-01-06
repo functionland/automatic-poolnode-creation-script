@@ -237,9 +237,9 @@ cleanup() {
     echo "Cleaning up..."
 
     # Remove Go tarball
-    if [ -f "go1.21.0.linux-amd64.tar.gz" ]; then
-        echo "Removing Go tarball..."
-        sudo rm go1.21.0.linux-amd64.tar.gz
+    if [ -f "$KEYS_INFO_PATH" ]; then
+        echo "Removing $KEYS_INFO_PATH..."
+        sudo rm "$KEYS_INFO_PATH"
     fi
 
     # Add other cleanup tasks here
