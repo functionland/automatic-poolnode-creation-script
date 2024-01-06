@@ -54,11 +54,14 @@ get_aws_region() {
 
 # Main function to find pool region on aws
 find_pool_region_aws() {
-    local token=$(get_aws_token)
+    local token
+    token=$(get_aws_token)
     if [ -n "$token" ]; then
-        local aws_region=$(get_aws_region "$token")
+        local aws_region
+        aws_region=$(get_aws_region "$token")
         if [ -n "$aws_region" ]; then
-            local pool_region=$(get_region_name "$aws_region")
+            local pool_region
+            pool_region=$(get_region_name "$aws_region")
             echo "$pool_region"
         else
             echo ""
@@ -158,13 +161,13 @@ setup_and_extract_keys() {
         output=$(/home/$USER/sugarfunge-node/target/release/sugarfunge-node key generate --scheme Sr25519 --password-filename="$PASSWORD_FILE" 2>&1)
         echo "$output"
         secret_phrase=$(echo "$output" | grep "Secret phrase:" | awk '{$1=$2=""; print $0}' | sed 's/^[ \t]*//;s/[ \t]*$//')
-        echo "$secret_phrase" > "$SECRET_DIR/secret_phrase.txt"
+        echo -n "$secret_phrase" > "$SECRET_DIR/secret_phrase.txt"
 
         secret_seed=$(echo "$output" | grep "Secret seed:" | awk '{$1=$2=""; print $0}' | sed 's/^[ \t]*//;s/[ \t]*$//')
-        echo "$secret_seed" > "$SECRET_DIR/secret_seed.txt"
+        echo -n "$secret_seed" > "$SECRET_DIR/secret_seed.txt"
 
         account=$(echo "$output" | grep "SS58 Address:" | awk '{$1=$2=""; print $0}' | sed 's/^[ \t]*//;s/[ \t]*$//')
-        echo "$account" > "$SECRET_DIR/account.txt"
+        echo -n "$account" > "$SECRET_DIR/account.txt"
     fi
 }
 
@@ -311,7 +314,7 @@ setup_gofula_service() {
 
     # Save the blox peer ID to the file
 	mkdir -p "$SECRET_DIR"
-    echo "$blox_peer_id" > "$SECRET_DIR/node_peerid.txt"
+    echo -n "$blox_peer_id" > "$SECRET_DIR/node_peerid.txt"
     echo "Blox peer ID saved to $SECRET_DIR/node_peerid.txt"
 
     # Create the service file using the provided path
@@ -486,7 +489,7 @@ generate_node_key() {
         
         # Check if the node_key file exists and has different content
         if [ ! -f "$SECRET_DIR/node_key.txt" ] || [ "$new_key" != "$(cat $SECRET_DIR/node_key.txt)" ]; then
-            echo "$new_key" > "$SECRET_DIR/node_key.txt"
+            echo -n "$new_key" > "$SECRET_DIR/node_key.txt"
             echo "Node key saved to $SECRET_DIR/node_key.txt"
         else
             echo "Node key file already exists and is up to date."

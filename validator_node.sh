@@ -24,11 +24,21 @@ usage() {
 # Parse named parameters
 while [ "$1" != "" ]; do
     case $1 in
-        --password=*)  PASSWORD="${1#*=}" ;;
-        --validator=*) VALIDATOR_NO="${1#*=}" ;;
-        --domain=*) NODE_DOMAIN="${1#*=}" ;;
-        --bootnodes=*) BOOTSTRAP_NODE="${1#*=}" ;;
-        *)             usage ;;
+        --password=*)
+            PASSWORD="${1#*=}"
+            ;;
+        --validator=*)
+            VALIDATOR_NO="${1#*=}"
+            ;;
+        --domain=*)
+            NODE_DOMAIN="${1#*=}"
+            ;;
+        --bootnodes=*)
+            BOOTSTRAP_NODE="${1#*=}"
+            ;;
+        *)
+            usage
+            ;;
     esac
     shift
 done
@@ -108,16 +118,20 @@ read_keys_from_file() {
     done < "$KEYS_INFO_PATH"
 
     # Save the extracted values to respective files for later use
-    echo "$SECRET_SEED" > "$SECRET_DIR/secret_seed.txt"
-    echo "$PUBLIC_KEY_SS58" > "$SECRET_DIR/account.txt"
-    echo "$PEER_ID" > "$SECRET_DIR/node_peerid.txt"
-    echo "$NODE_KEY" > "$SECRET_DIR/node_key.txt"
-    echo "$PASSWORD" > "$SECRET_DIR/password.txt"
+    echo -n "$SECRET_SEED" > "$SECRET_DIR/secret_seed.txt"
+    echo -n "$PUBLIC_KEY_SS58" > "$SECRET_DIR/account.txt"
+    echo -n "$PEER_ID" > "$SECRET_DIR/node_peerid.txt"
+    echo -n "$NODE_KEY" > "$SECRET_DIR/node_key.txt"
+    echo -n "$PASSWORD" > "$SECRET_DIR/password.txt"
 }
 
 # Function to insert keys into the node (Aura and Grandpa accounts)
 insert_keys() {
     echo "insert_keys"
+    # Clear the keys directory
+    sudo rm -rf "$KEYS_DIR"
+
+    # Insert the keys
     /home/$USER/sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --keystore-path="$KEYS_DIR" --chain "$HOME/sugarfunge-node/customSpecRaw.json" --scheme Sr25519 --suri "$SECRET_PHRASE" --password-filename "$SECRET_DIR/password.txt" --key-type aura
     /home/$USER/sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --keystore-path="$KEYS_DIR" --chain "$HOME/sugarfunge-node/customSpecRaw.json" --scheme Ed25519 --suri "$SECRET_PHRASE" --password-filename "$SECRET_DIR/password.txt" --key-type gran
 }
@@ -137,6 +151,14 @@ setup_node_service() {
     else
         echo "$node_service_file_path does not exist."
     fi
+
+    # Construct the ExecStart command
+    EXEC_START="/usr/bin/docker run -u root --rm --name MyNode$VALIDATOR_NO --network host -v $SECRET_DIR/password.txt:/password.txt -v $KEYS_DIR:/keys -v $DATA_DIR:/data functionland/sugarfunge-node:amd64-latest --chain /customSpecRaw.json --enable-offchain-indexing true --base-path=/data --keystore-path=/keys --port=$PORT --rpc-port $RPC_PORT --rpc-cors=all --rpc-methods=Unsafe --rpc-external --validator --name Node$VALIDATOR_NO --password-filename=\"/password.txt\" --node-key=$NODE_KEY"
+
+    # Add bootnodes parameter if provided
+    if [ ! -z "$BOOTSTRAP_NODE" ]; then
+        EXEC_START="$EXEC_START --bootnodes $BOOTSTRAP_NODE"
+    fi
     
     # Use the variables instead of hardcoded values
     sudo bash -c "cat > '$node_service_file_path'" << EOF
@@ -147,7 +169,7 @@ After=network.target
 [Service]
 Type=simple
 User=root
-ExecStart=/usr/bin/docker run -u root --rm --name MyNode$VALIDATOR_NO --network host -v $SECRET_DIR/password.txt:/password.txt -v $KEYS_DIR:/keys -v $KEYS_DIR:/keys -v $DATA_DIR:/data functionland/sugarfunge-node:amd64-latest --chain /customSpecRaw.json --enable-offchain-indexing true --base-path=/data --keystore-path=/keys --port=$PORT --rpc-port $RPC_PORT --rpc-cors=all --rpc-methods=Unsafe --rpc-external --validator --name Node$VALIDATOR_NO --password-filename="/password.txt" --node-key=$NODE_KEY --bootnodes $BOOTSTRAP_NODE
+ExecStart=$EXEC_START
 Restart=always
 RestartSec=10s
 StartLimitInterval=5min

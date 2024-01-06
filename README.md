@@ -61,12 +61,12 @@ nodeKey: 1xxxxxxxxxxxx
 Note that the above file will be automatically removed by script at the end of installation. Then you can run:
 
 ```bash
-./validator_setup.sh --password=YOUR_PASSWORD --validator=VALIDATOR_NUMBER --domain=DOMAIN_NAME_OPTIONAL
+./validator_setup.sh --password='YOUR_PASSWORD' --validator=VALIDATOR_NUMBER --domain=DOMAIN_NAME_OPTIONAL
 ```
 
 Parameters
 
---password: [default=''] A strong password for securing the node's keystore. If not set an 25-character password will be automatically generated.
+--password: [default=''] A strong password for securing the node's keystore. If not set an 25-character password will be automatically generated. ALWAYS put hte password in single quote.
 
 --validator: [default=01] A unique number or identifier for the validator. This helps in naming and managing multiple validators on the same host. default to 01
 
@@ -76,7 +76,7 @@ Parameters
 
 Example
 ```bash
-./validator_setup.sh --password=VeryStrongPassword! --validator=01 --domain=test.fx.land --bootnodes=/ip4/127.0.0.1/tcp/30334/p2p/12D3KooWBeXV65svCyknCvG1yLxXVFwRxzBLqvBJnUF6W84BLugv
+./validator_setup.sh --password='VeryStrongPassword$!' --validator=01 --domain=test.fx.land --bootnodes=/ip4/127.0.0.1/tcp/30334/p2p/12D3KooWBeXV65svCyknCvG1yLxXVFwRxzBLqvBJnUF6W84BLugv
 ```
 
 ### Features
