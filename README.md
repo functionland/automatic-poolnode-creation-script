@@ -33,6 +33,32 @@ The Functionyard validator setup script is a Bash script intended for Ubuntu ser
 ### Usage
 
 To use the script, you must provide a password for the node's keystore and a unique identifier for the validator.
+Also you need to store a file named keys01.info or keys02.info on your home folder with the below content:
+
+```bash
+Aura account1
+Secret phrase:       xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx
+  Network ID:        substrate
+  Secret seed:       0xb0000000
+  Public key (hex):  0x18000000
+  Account ID:        0x18000000
+  Public key (SS58): 5Cxxxxxxx
+  SS58 Address:      5Cxxxxxxx
+  
+Grandpa account1:
+Secret phrase:       xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx
+  Network ID:        substrate
+  Secret seed:       0xb0000000
+  Public key (hex):  0xa0000000
+  Account ID:        0xa0000000
+  Public key (SS58): 5Fxxxxxxxx
+  SS58 Address:      5Fxxxxxxxx
+  
+peerID: 12D3Kooxxxxxxx
+nodeKey: 1xxxxxxxxxxxx
+```
+
+Then you can run:
 
 ```bash
 ./validator_setup.sh --password=YOUR_PASSWORD --validator=VALIDATOR_NUMBER
@@ -40,9 +66,9 @@ To use the script, you must provide a password for the node's keystore and a uni
 
 Parameters
 
---password: A strong password for securing the node's keystore.
+--password: A strong password for securing the node's keystore. default is a 25-character password.
 
---validator: A unique number or identifier for the validator. This helps in naming and managing multiple validators on the same host.
+--validator: A unique number or identifier for the validator. This helps in naming and managing multiple validators on the same host. default to 01
 
 Example
 ```bash
