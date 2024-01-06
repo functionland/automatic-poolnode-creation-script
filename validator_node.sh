@@ -3,13 +3,12 @@
 set -e
 
 # Variables
-USER="ubuntu" # <-- Modify this as needed
 EMAIL="hi@fx.land"  # <-- Modify this as needed
 RPC_PORT="9944" # <-- This will be adjusted based on VALIDATOR_NO
 PORT="30334" # <-- This will be adjusted based on VALIDATOR_NO
-BOOTSTRAP_PARAM="" # <-- This will be adjusted based on BOOTSTRAP_NODE
 
 # Parameters
+USER="ubuntu" # <-- set with --user or eliminate for ubuntu
 VALIDATOR_NO="" # <-- set with --validator or eliminate for 01
 PASSWORD="" # <-- set with --password  or eliminate for a random password
 NODE_DOMAIN="" # <-- set with --domain or eliminate
@@ -17,7 +16,7 @@ BOOTSTRAP_NODE="" # <-- set with --bootnodes or eliminate
 
 # Function to show usage
 usage() {
-    echo "Usage: $0 --password=12345 --validator=01 --domain=test.fx.land --bootnodes=/ip4/127.0.0.1/tcp/30334/p2p/12D3KooWBeXV65svCyknCvG1yLxXVFwRxzBLqvBJnUF6W84BLugv"
+    echo "Usage: $0 --user=ubuntu --password=12345 --validator=01 --domain=test.fx.land --bootnodes=/ip4/127.0.0.1/tcp/30334/p2p/12D3KooWBeXV65svCyknCvG1yLxXVFwRxzBLqvBJnUF6W84BLugv"
     exit 1
 }
 
@@ -31,6 +30,9 @@ while [ "$1" != "" ]; do
             VALIDATOR_NO="${1#*=}"
             ;;
         --domain=*)
+            USER="${1#*=}"
+            ;;
+        --user=*)
             NODE_DOMAIN="${1#*=}"
             ;;
         --bootnodes=*)
@@ -355,7 +357,7 @@ main() {
     export DEBIAN_FRONTEND=noninteractive
 	echo "\$nrconf{restart} = 'a';" | sudo tee /etc/needrestart/needrestart.conf
 
-    echo "Setting up for Validator No: $VALIDATOR_NO on RPC PORT:$RPC_PORT with password:$PASSWORD"
+    echo "User: $USER is setting up Validator No: $VALIDATOR_NO on RPC PORT:$RPC_PORT with password:$PASSWORD"
 
     # Install required packages
     echo "Installing required packages"
