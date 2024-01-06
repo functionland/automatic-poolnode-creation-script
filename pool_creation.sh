@@ -472,10 +472,10 @@ verify_pool_creation() {
 generate_node_key() {
     config_path="/home/$USER/.fula/config.yaml"
     echo "Checking identity in $config_path..."
-	sudo chmod +r /home/ubuntu/.fula/config.yaml
+	sudo chmod +r "$config_path"
 
     # Check if the identity field exists and has a value
-    identity=$(python3 -c "import yaml; print(yaml.safe_load(open('/home/ubuntu/.fula/config.yaml'))['identity'])")
+    identity=$(python3 -c "import yaml; print(yaml.safe_load(open('$config_path'))['identity'])")
     
     if [ -z "$identity" ]; then
         echo "Error: 'identity' field is missing or empty in $config_path."

@@ -2,15 +2,18 @@
 
 set -e
 
-# Variables
+# Parameters
 VALIDATOR_NO=""
 PASSWORD=""
+NODE_DOMAIN=""
+
+# Variables
 USER="ubuntu"
 EMAIL="hi@fx.land"  # <-- Modify this as needed
 
 # Function to show usage
 usage() {
-    echo "Usage: $0 --password=PASSWORD --validator=VALIDATOR_NO"
+    echo "Usage: $0 --password=PASSWORD --validator=VALIDATOR_NO --domain=NODE_DOMAIN"
     exit 1
 }
 
@@ -19,10 +22,15 @@ while [ "$1" != "" ]; do
     case $1 in
         --password=*)  PASSWORD="${1#*=}" ;;
         --validator=*) VALIDATOR_NO="${1#*=}" ;;
+        --domain=*) NODE_DOMAIN="${1#*=}" ;;
         *)             usage ;;
     esac
     shift
 done
+
+if [ -z "$NODE_DOMAIN" ]; then
+    echo "missing domain parameter. Skipping the domain handling"
+fi
 
 if [ -z "$VALIDATOR_NO" ]; then
     echo "missing VALIDATOR_NO parameter. using 01 as default"
@@ -30,9 +38,10 @@ if [ -z "$VALIDATOR_NO" ]; then
 fi
 
 KEYS_INFO_PATH="/home/$USER/keys$VALIDATOR_NO.info"
-SECRET_DIR="/var/lib/.sugarfunge-node/passwords$VALIDATOR_NO"
-DATA_DIR="/var/lib/.sugarfunge-node/data/node$VALIDATOR_NO"
-KEYS_DIR="/var/lib/.sugarfunge-node/keys/node$VALIDATOR_NO"
+BASE_DIR="/home/$USER/.sugarfunge-node"
+SECRET_DIR="$BASE_DIR/passwords$VALIDATOR_NO"
+DATA_DIR="$BASE_DIR/data/node$VALIDATOR_NO"
+KEYS_DIR="$BASE_DIR/keys/node$VALIDATOR_NO"
 LOG_DIR="/var/log"
 
 # Check if all parameters are provided
@@ -46,7 +55,8 @@ if [ -z "$PASSWORD" ]; then
 fi
 
 # Ensure required directories exist
-mkdir -p "$SECRET_DIR" "$DATA_DIR" "$LOG_DIR"
+mkdir -p "$SECRET_DIR" "$DATA_DIR" "$KEYS_DIR" "$LOG_DIR"
+sudo chmod -R +r "$BASE_DIR"
 
 # Function to read keys from file and save to variables
 read_keys_from_file() {
@@ -104,8 +114,8 @@ After=network.target
 
 [Service]
 Type=simple
-User=$USER
-ExecStart=/usr/bin/docker run -u root --rm --name MyNode$VALIDATOR_NO --network host -v $SECRET_DIR/password.txt:/password.txt -v /var/lib/.sugarfunge-node/keys/node$VALIDATOR_NO:/keys -v $KEYS_DIR:/keys -v $DATA_DIR:/data functionland/sugarfunge-node:amd64-latest --chain /customSpecRaw.json --enable-offchain-indexing true --base-path=/data --keystore-path=/keys --port=30334 --rpc-port 9944 --rpc-cors=all --rpc-methods=Unsafe --rpc-external --validator --name Node$VALIDATOR_NO --password-filename="/password.txt" --node-key=$NODE_KEY
+User=root
+ExecStart=/usr/bin/docker run -u root --rm --name MyNode$VALIDATOR_NO --network host -v $SECRET_DIR/password.txt:/password.txt -v $KEYS_DIR:/keys -v $KEYS_DIR:/keys -v $DATA_DIR:/data functionland/sugarfunge-node:amd64-latest --chain /customSpecRaw.json --enable-offchain-indexing true --base-path=/data --keystore-path=/keys --port=30334 --rpc-port 9944 --rpc-cors=all --rpc-methods=Unsafe --rpc-external --validator --name Node$VALIDATOR_NO --password-filename="/password.txt" --node-key=$NODE_KEY
 Restart=always
 RestartSec=10s
 StartLimitInterval=5min
@@ -127,6 +137,7 @@ EOF
 install_packages() {
     sudo apt-get update -qq
     sudo apt-get install -y docker.io nginx software-properties-common certbot python3-certbot-nginx
+    sudo apt-get install -y wget git curl build-essential jq pkg-config libssl-dev protobuf-compiler llvm libclang-dev clang plocate cmake
     sudo systemctl start docker
     sudo systemctl enable docker
 }
@@ -146,16 +157,24 @@ pull_docker_images() {
     fi
 }
 
-# Function to configure NGINX and Let's Encrypt
-configure_nginx_letsencrypt() {
-    # Update NGINX configuration
+# Function to configure NGINX for WSS
+configure_nginx_for_wss() {
+    echo "Configuring NGINX for WSS..."
+
+    # Create a backup of the original default config
+    sudo cp /etc/nginx/sites-available/default /etc/nginx/sites-available/default.bak
+
+    # Write the new configuration
     sudo bash -c 'cat > /etc/nginx/sites-available/default' << EOF
 server {
-    listen 80;
-    server_name $EMAIL; # Replace with your domain name
+    listen 443 ssl;
+    server_name $NODE_DOMAIN; # Replace with your domain name
+
+    ssl_certificate /etc/letsencrypt/live/$NODE_DOMAIN/fullchain.pem; # Replace with your SSL certificate path
+    ssl_certificate_key /etc/letsencrypt/live/$NODE_DOMAIN/privkey.pem; # Replace with your SSL certificate key path
 
     location / {
-        proxy_pass http://localhost:9944;
+        proxy_pass http://127.0.0.1:9944;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection "upgrade";
@@ -167,36 +186,14 @@ EOF
     # Test and reload NGINX
     sudo nginx -t
     sudo systemctl reload nginx
-
-    # Obtain SSL certificates from Let's Encrypt
-    sudo certbot --nginx -m $EMAIL --agree-tos --no-eff-email -d $EMAIL --redirect --keep-until-expiring --non-interactive
 }
 
-# Function to setup wss service
-setup_wss_service() {
-    wss_service_file_path="/etc/systemd/system/wss.service"
-    echo "Setting up wss service at $wss_service_file_path"
+# Function to obtain SSL certificates from Let's Encrypt
+obtain_ssl_certificates() {
+    echo "Obtaining SSL certificates from Let's Encrypt for $NODE_DOMAIN..."
 
-    # Use the variables instead of hardcoded values
-    sudo bash -c "cat > '$wss_service_file_path'" << EOF
-[Unit]
-Description=WebSocket Secure Service
-After=network.target
-
-[Service]
-Type=simple
-ExecStart=/usr/bin/docker run -u root --rm --name wss --network host -v /etc/letsencrypt:/etc/letsencrypt -v /var/lib/.sugarfunge-node/data/node$VALIDATOR_NO:/data functionland/sugarfunge-wss:latest wss://node.functionyard.fula.network ws://127.0.0.1:4000
-Restart=always
-RestartSec=10s
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-    sudo systemctl daemon-reload
-    sudo systemctl enable wss.service
-    sudo systemctl start wss.service
-    echo "WSS service has been set up and started."
+    # Obtain the certificate (this also modifies the Nginx config for you)
+    sudo certbot --nginx -m "$EMAIL" --agree-tos --no-eff-email -d "$NODE_DOMAIN" --redirect --keep-until-expiring --non-interactive
 }
 
 # Function to set LIBCLANG_PATH for the user
@@ -236,7 +233,7 @@ clone_and_build() {
 cleanup() {
     echo "Cleaning up..."
 
-    # Remove Go tarball
+    # Remove keys file
     if [ -f "$KEYS_INFO_PATH" ]; then
         echo "Removing $KEYS_INFO_PATH..."
         sudo rm "$KEYS_INFO_PATH"
@@ -276,49 +273,61 @@ check_services_status() {
 # Main script execution
 main() {
     # Set the non-interactive frontend for APT
+    # Set DEBIAN_FRONTEND to noninteractive to avoid interactive prompts
     export DEBIAN_FRONTEND=noninteractive
-    # Check if a master seed is provided
-    if [ $# -lt 2 ]; then
-        echo "Please provide 1:password, 2:validator number."
-        exit 1
-    fi
+	echo "\$nrconf{restart} = 'a';" | sudo tee /etc/needrestart/needrestart.conf
 
-    echo "Setting up for Validator No: $VALIDATOR_NO"
+    echo "Setting up for Validator No: $VALIDATOR_NO with password:$PASSWORD"
 
     # Install required packages
+    echo "Installing required packages"
     install_packages
 
     # Pull the required Docker image and verify
+    echo "Pulling required docker images"
     pull_docker_images
 
     # Set LIBCLANG_PATH for the user
+    echo "Setting required env paths"
     set_libclang_path
 
     # Install Rust and Cargo
+    echo "Installing rust"
     install_rust
 
     # Clone and build the necessary repositories
+    echo "Cloning and building libraries"
     clone_and_build
 
     # Read the keys from the file
+    echo "Reading secret keys from the file"
     read_keys_from_file
 
     # Insert keys into the node
+    echo "Inserting keys into node"
     insert_keys
 
     # Setup and start node service
+    echo "Setting up node service"
     setup_node_service
 
-    # Configure NGINX and Let's Encrypt
-    configure_nginx_letsencrypt
+    # Check if NODE_DOMAIN is not empty
+    if [ "$NODE_DOMAIN" != "" ]; then
+        # Obtain SSL certificates from Let's Encrypt
+        obtain_ssl_certificates
 
-    # Setup WebSocket Secure service
-    setup_wss_service
+        # Configure NGINX for WSS
+        configure_nginx_for_wss
+    else
+        echo "NODE_DOMAIN is not set. Skipping SSL and NGINX configuration."
+    fi
 
     # Check the status of the services
+    echo "Check service status"
     check_services_status
 
     # Clean up after the script
+    echo "Cleaning up"
     cleanup
 
     echo "Setup complete. Please review the logs and verify the services are running correctly."
