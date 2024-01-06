@@ -6,15 +6,18 @@ set -e
 USER="ubuntu" # <-- Modify this as needed
 EMAIL="hi@fx.land"  # <-- Modify this as needed
 RPC_PORT="9944" # <-- This will be adjusted based on VALIDATOR_NO
+PORT="30334" # <-- This will be adjusted based on VALIDATOR_NO
+BOOTSTRAP_PARAM="" # <-- This will be adjusted based on BOOTSTRAP_NODE
 
 # Parameters
 VALIDATOR_NO="" # <-- set with --validator or eliminate for 01
 PASSWORD="" # <-- set with --password  or eliminate for a random password
 NODE_DOMAIN="" # <-- set with --domain or eliminate
+BOOTSTRAP_NODE="" # <-- set with --bootnodes or eliminate
 
 # Function to show usage
 usage() {
-    echo "Usage: $0 --password=PASSWORD --validator=VALIDATOR_NO --domain=NODE_DOMAIN"
+    echo "Usage: $0 --password=12345 --validator=01 --domain=test.fx.land --bootnodes=/ip4/127.0.0.1/tcp/30334/p2p/12D3KooWBeXV65svCyknCvG1yLxXVFwRxzBLqvBJnUF6W84BLugv"
     exit 1
 }
 
@@ -24,6 +27,7 @@ while [ "$1" != "" ]; do
         --password=*)  PASSWORD="${1#*=}" ;;
         --validator=*) VALIDATOR_NO="${1#*=}" ;;
         --domain=*) NODE_DOMAIN="${1#*=}" ;;
+        --bootnodes=*) BOOTSTRAP_NODE="${1#*=}" ;;
         *)             usage ;;
     esac
     shift
@@ -50,8 +54,21 @@ calculate_rpc_port() {
     local rpc_port=$((base_port + offset))
     echo $rpc_port
 }
+# Function to calculate the port based on the validator number
+calculate_port() {
+    local base_port=30334
+    # Convert VALIDATOR_NO to a decimal number to handle leading zeros
+    local num
+    num=$(printf "%d" "$VALIDATOR_NO")
+    # Calculate the offset (subtract 1 so VALIDATOR_NO "01" corresponds to offset 0)
+    local offset=$((num - 1))
+    # Calculate and echo the RPC port
+    local port=$((base_port + offset))
+    echo $port
+}
 
 RPC_PORT=$(calculate_rpc_port)
+PORT=$(calculate_port)
 KEYS_INFO_PATH="/home/$USER/keys$VALIDATOR_NO.info"
 BASE_DIR="/home/$USER/.sugarfunge-node"
 SECRET_DIR="$BASE_DIR/passwords$VALIDATOR_NO"
@@ -130,7 +147,7 @@ After=network.target
 [Service]
 Type=simple
 User=root
-ExecStart=/usr/bin/docker run -u root --rm --name MyNode$VALIDATOR_NO --network host -v $SECRET_DIR/password.txt:/password.txt -v $KEYS_DIR:/keys -v $KEYS_DIR:/keys -v $DATA_DIR:/data functionland/sugarfunge-node:amd64-latest --chain /customSpecRaw.json --enable-offchain-indexing true --base-path=/data --keystore-path=/keys --port=30334 --rpc-port $RPC_PORT --rpc-cors=all --rpc-methods=Unsafe --rpc-external --validator --name Node$VALIDATOR_NO --password-filename="/password.txt" --node-key=$NODE_KEY
+ExecStart=/usr/bin/docker run -u root --rm --name MyNode$VALIDATOR_NO --network host -v $SECRET_DIR/password.txt:/password.txt -v $KEYS_DIR:/keys -v $KEYS_DIR:/keys -v $DATA_DIR:/data functionland/sugarfunge-node:amd64-latest --chain /customSpecRaw.json --enable-offchain-indexing true --base-path=/data --keystore-path=/keys --port=$PORT --rpc-port $RPC_PORT --rpc-cors=all --rpc-methods=Unsafe --rpc-external --validator --name Node$VALIDATOR_NO --password-filename="/password.txt" --node-key=$NODE_KEY --bootnodes $BOOTSTRAP_NODE
 Restart=always
 RestartSec=10s
 StartLimitInterval=5min
@@ -351,6 +368,7 @@ main() {
     setup_node_service
 
     # Check if NODE_DOMAIN is not empty
+    local NODE_ADDRESS
     if [ "$NODE_DOMAIN" != "" ]; then
         # Obtain SSL certificates from Let's Encrypt
         echo "Obtaining SSL certificate"
@@ -363,8 +381,10 @@ main() {
         # Configure automatic SSL certificate renewal
         echo "Configuring cronjob for auto SSL renewal"
         configure_auto_ssl_renewal
+        NODE_ADDRESS="/dns4/node.functionyard.fula.network/tcp/$PORT/p2p/$PEER_ID"
     else
         echo "NODE_DOMAIN is not set. Skipping SSL and NGINX configuration."
+        NODE_ADDRESS="/ip4/127.0.0.1/tcp/$PORT/p2p/$PEER_ID"
     fi
 
     # Check the status of the services
@@ -376,6 +396,7 @@ main() {
     cleanup
 
     echo "Setup complete. Please review the logs and verify the services are running correctly."
+    echo "Node address is: $NODE_ADDRESS"
 }
 
 # Run the main function with the provided arguments
