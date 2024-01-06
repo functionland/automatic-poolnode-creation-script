@@ -220,6 +220,30 @@ set_libclang_path() {
     source ~/.profile
 }
 
+# Function to configure automatic SSL certificate renewal
+configure_auto_ssl_renewal() {
+    # Unique identifier for the cron job
+    CRON_IDENTIFIER="#AUTO_SSL_RENEWAL"
+
+    # Write out the current crontab for the root user
+    sudo crontab -l > mycron || true  # The 'true' ensures that the script doesn't exit if crontab is empty
+
+    # Check if the cron job already exists
+    if ! grep -q "$CRON_IDENTIFIER" mycron; then
+        # Echo new cron into cron file. Schedule the job to run at 2:30 AM daily. Adjust the timing as needed.
+        echo "30 2 * * * sudo certbot renew --post-hook 'systemctl reload nginx' $CRON_IDENTIFIER" >> mycron
+
+        # Install new cron file for the root user
+        sudo crontab mycron
+        echo "Cron job for SSL certificate renewal has been set up."
+    else
+        echo "Cron job for SSL certificate renewal already exists."
+    fi
+
+    # Clean up
+    rm mycron
+}
+
 # Function to install Rust and Cargo
 install_rust() {
 	echo "Installing rust"
@@ -329,10 +353,16 @@ main() {
     # Check if NODE_DOMAIN is not empty
     if [ "$NODE_DOMAIN" != "" ]; then
         # Obtain SSL certificates from Let's Encrypt
+        echo "Obtaining SSL certificate"
         obtain_ssl_certificates
 
         # Configure NGINX for WSS
+        echo "Configuring wss"
         configure_nginx_for_wss
+
+        # Configure automatic SSL certificate renewal
+        echo "Configuring cronjob for auto SSL renewal"
+        configure_auto_ssl_renewal
     else
         echo "NODE_DOMAIN is not set. Skipping SSL and NGINX configuration."
     fi
