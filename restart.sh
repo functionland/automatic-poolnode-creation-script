@@ -122,6 +122,8 @@ main() {
     sleep 3
 
     #upload_manifest
+    sleep 3
+    
     #store_manifest
 
     echo "All services have been restarted and data folders cleared."
