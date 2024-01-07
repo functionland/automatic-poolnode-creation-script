@@ -66,6 +66,37 @@ create_pool() {
     }" http://127.0.0.1:4000/fula/pool/create
 }
 
+# Function to upload a manifest
+upload_manifest() {
+    echo "Uploading manifest..."
+    curl -X POST -H "Content-Type: application/json" \
+    --data "{
+        \"seed\": \"0xde74b73a4e99c09ae760e7d05c1cf50bd166312fe1be6fb46609b690efb0e472\",
+        \"replication_factor\": 1,
+        \"pool_id\": 1,
+        \"cid\": \"QmcwQBzZcFVa7gyEQazd9WryzXKVMK2TvwBweruBZhy3pf\",
+        \"manifest_metadata\": {
+            \"job\": {
+                \"work\": \"Storage\",
+                \"engine\": \"IPFS\",
+                \"uri\": \"QmcwQBzZcFVa7gyEQazd9WryzXKVMK2TvwBweruBZhy3pf\"
+            }
+        }
+    }" $FULA_SUGARFUNGE_API_HOST/fula/manifest/upload
+}
+
+# Function to store a manifest
+store_manifest() {
+    echo "Storing manifest..."
+    curl -X POST -H "Content-Type: application/json" \
+    --data "{
+        \"seed\": \"0x141fa827544cfc60756675ee58ebfd54e8311779c7ef1ec44265e8605d2f2bdd\",
+        \"uploader\": \"5CcHZucP2u1FXQW9wuyC11vAVxB3c48pUhc5cc9b3oxbKPL2\",
+        \"cid\": \"QmcwQBzZcFVa7gyEQazd9WryzXKVMK2TvwBweruBZhy3pf\",
+        \"pool_id\": 1
+    }" $FULA_SUGARFUNGE_API_HOST/fula/manifest/storage
+}
+
 
 # Main function to orchestrate stopping, clearing, and restarting
 main() {
@@ -86,6 +117,9 @@ main() {
 
     # Create pool
     create_pool "$SEED_NODE"
+
+    #upload_manifest
+    #store_manifest
 
     echo "All services have been restarted and data folders cleared."
 }
