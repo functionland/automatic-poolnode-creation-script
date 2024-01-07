@@ -119,9 +119,9 @@ main() {
     # Create pool
     create_pool "$SEED_NODE"
 
-    #upload_manifest
+    upload_manifest
 
-    #store_manifest
+    store_manifest
 
     echo "All services have been restarted and data folders cleared."
 }
