@@ -5,7 +5,7 @@ USER="ubuntu"  # Adjust as necessary
 
 # Define the directories and services from the original script
 DATA_DIR="/home/$USER/.sugarfunge-node/data"
-SERVICES=("sugarfunge-node01.service" "sugarfunge-node02.service" "sugarfunge-node03.service" "sugarfunge-api01.service")  # Add other related services if necessary
+SERVICES=("sugarfunge-node01.service" "sugarfunge-node02.service" "sugarfunge-node03.service" "sugarfunge-api03.service")  # Add other related services if necessary
 
 # Function to stop services
 stop_services() {
