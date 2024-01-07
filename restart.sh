@@ -72,7 +72,7 @@ upload_manifest() {
     echo "Uploading manifest..."
     curl -X POST -H "Content-Type: application/json" \
     --data "{
-        \"seed\": \"0xde74b73a4e99c09ae760e7d05c1cf50bd166312fe1be6fb46609b690efb0e472\",
+        \"seed\": \"$1\",
         \"replication_factor\": 1,
         \"pool_id\": 1,
         \"cid\": \"QmcwQBzZcFVa7gyEQazd9WryzXKVMK2TvwBweruBZhy3pf\",
@@ -91,7 +91,7 @@ store_manifest() {
     echo "Storing manifest..."
     curl -X POST -H "Content-Type: application/json" \
     --data "{
-        \"seed\": \"0x141fa827544cfc60756675ee58ebfd54e8311779c7ef1ec44265e8605d2f2bdd\",
+        \"seed\": \"$1\",
         \"uploader\": \"5CcHZucP2u1FXQW9wuyC11vAVxB3c48pUhc5cc9b3oxbKPL2\",
         \"cid\": \"QmcwQBzZcFVa7gyEQazd9WryzXKVMK2TvwBweruBZhy3pf\",
         \"pool_id\": 1
@@ -103,25 +103,32 @@ store_manifest() {
 main() {
     # Stop all the services
     stop_services
+    echo "All services stopped"
 
     # Clear only the data folders
     clear_data_folders
+    echo "Chain data cleared"
 
     # Restart the stopped services
     start_services
+    echo "All services started"
 
     # Wait a little for services to be fully up
     sleep 5
 
     # Fund account
     fund_account "$SEED_MASTER"
+    echo "Account $SEED_NODE funded from $SEED_MASTER"
 
     # Create pool
     create_pool "$SEED_NODE"
+    echo "Pool created by $SEED_NODE"
 
-    upload_manifest
+    upload_manifest "$SEED_MASTER"
+    echo "Manifest uploaded by $SEED_MASTER"
 
-    store_manifest
+    store_manifest "$SEED_NODE"
+    echo "Manifest stored by $SEED_NODE"
 
     echo "All services have been restarted and data folders cleared."
 }
