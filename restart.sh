@@ -114,9 +114,11 @@ main() {
 
     # Fund account
     fund_account "$SEED_MASTER"
+    sleep 3
 
     # Create pool
     create_pool "$SEED_NODE"
+    sleep 3
 
     #upload_manifest
     #store_manifest
