@@ -75,7 +75,7 @@ main() {
     start_services
 
     # Wait a little for services to be fully up
-    sleep 10
+    sleep 20
 
     # Fund account
     fund_account "$SEED_MASTER"
