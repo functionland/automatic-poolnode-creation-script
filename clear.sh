@@ -7,10 +7,11 @@ USER="ubuntu"  # Adjust as necessary
 DATA_DIR="/home/$USER/.sugarfunge-node/data"
 SERVICES=("sugarfunge-node01.service" "sugarfunge-node02.service" "sugarfunge-node03.service" "sugarfunge-api03.service")  # Add other related services if necessary
 
-# Function to stop services
+# Function to stop services in reverse order
 stop_services() {
-    echo "Stopping services..."
-    for service in "${SERVICES[@]}"; do
+    echo "Stopping services in reverse order..."
+    for (( idx=${#SERVICES[@]}-1 ; idx>=0 ; idx-- )); do
+        service=${SERVICES[idx]}
         sudo systemctl stop "$service"
         echo "Stopped $service."
     done
