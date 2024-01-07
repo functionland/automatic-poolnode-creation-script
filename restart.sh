@@ -1,5 +1,9 @@
 #!/bin/bash
 
+export FULA_CONTRACT_API_HOST="https://contract-api.functionyard.fula.network"
+export FULA_SUGARFUNGE_API_HOST="http://127.0.0.1:4000"
+
+
 # Variables from the original script
 USER="ubuntu"  # Adjust as necessary
 
