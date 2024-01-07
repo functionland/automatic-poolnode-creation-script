@@ -7,6 +7,8 @@ USER="ubuntu"  # Adjust as necessary
 DATA_DIR="/home/$USER/.sugarfunge-node/data"
 SERVICES=("sugarfunge-node01.service" "sugarfunge-node02.service" "sugarfunge-node03.service" "sugarfunge-api03.service")  # Add other related services if necessary
 
+SEED_MASTER=$1
+SEED_NODE=$2
 # Function to stop services in reverse order
 stop_services() {
     echo "Stopping services in reverse order..."
@@ -37,6 +39,30 @@ start_services() {
     done
 }
 
+# Function to fund an account
+fund_account() {
+    echo "Funding account..."
+    curl -X POST -H "Content-Type: application/json" \
+    --data "{
+        \"seed\": \"$1\",
+        \"amount\": 1000000000000000000,
+        \"to\": \"5Dc6dTQo6ZhDsHVFTDYwYz2oWDQ88kuEWrg39XWzrFagPdjS\"
+    }" http://127.0.0.1:4000/account/fund
+}
+
+# Function to create a pool
+create_pool() {
+    echo "Creating pool..."
+    curl -X POST -H "Content-Type: application/json" \
+    --data "{
+        \"seed\": \"$1\",
+        \"pool_name\":\"Canada Central\",
+        \"peer_id\": \"12D3KooWRTzN7HfmjoUBHokyRZuKdyohVVSGqKBMF24ZC3tGK78Q\",
+        \"region\": \"CanadaCentral\"
+    }" http://127.0.0.1:4000/fula/pool/create
+}
+
+
 # Main function to orchestrate stopping, clearing, and restarting
 main() {
     # Stop all the services
@@ -47,6 +73,15 @@ main() {
 
     # Restart the stopped services
     start_services
+
+    # Wait a little for services to be fully up
+    sleep 10
+
+    # Fund account
+    fund_account "$SEED_MASTER"
+
+    # Create pool
+    create_pool "$SEED_NODE"
 
     echo "All services have been restarted and data folders cleared."
 }
