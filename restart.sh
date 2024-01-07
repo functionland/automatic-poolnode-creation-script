@@ -40,6 +40,7 @@ start_services() {
     for service in "${SERVICES[@]}"; do
         sudo systemctl start "$service"
         echo "Started $service."
+        sleep 10
     done
 }
 
@@ -110,7 +111,7 @@ main() {
     start_services
 
     # Wait a little for services to be fully up
-    sleep 25
+    sleep 5
 
     # Fund account
     fund_account "$SEED_MASTER"
