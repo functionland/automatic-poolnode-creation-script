@@ -157,10 +157,6 @@ insert_keys() {
 
 # Function to setup and start node service (modify the existing function)
 setup_node_service() {
-    sudo rm "$LOG_DIR/Node$NODE_NO.err"
-    sudo rm "$LOG_DIR/Node$NODE_NO.log"
-    sudo touch "$LOG_DIR/Node$NODE_NO.err"
-    sudo touch "$LOG_DIR/Node$NODE_NO.log"
     node_service_file_path="/etc/systemd/system/sugarfunge-node$NODE_NO.service"
     echo "Setting up node service at $node_service_file_path"
     
@@ -213,10 +209,6 @@ EOF
 
 # Function to set up and start API service
 setup_api_service() {
-    sudo rm "$LOG_DIR/NodeAPI$NODE_NO.err"
-    sudo rm "$LOG_DIR/NodeAPI$NODE_NO.log"
-    sudo touch "$LOG_DIR/NodeAPI$NODE_NO.err"
-    sudo touch "$LOG_DIR/NodeAPI$NODE_NO.log"
 	api_service_file_path="/etc/systemd/system/sugarfunge-api$NODE_NO.service"
 	echo "setup_api_service at $api_service_file_path"
 	# Check if the file exists and then remove it
