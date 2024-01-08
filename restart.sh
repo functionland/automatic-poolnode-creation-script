@@ -83,7 +83,7 @@ upload_manifest() {
                 \"uri\": \"QmcwQBzZcFVa7gyEQazd9WryzXKVMK2TvwBweruBZhy3pf\"
             }
         }
-    }" $FULA_SUGARFUNGE_API_HOST/fula/manifest/upload
+    }"
 }
 
 # Function to store a manifest
