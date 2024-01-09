@@ -156,32 +156,31 @@ insert_keys() {
     /home/$USER/sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --keystore-path="$KEYS_DIR" --chain "$HOME/sugarfunge-node/customSpecRaw.json" --scheme Ed25519 --suri "$SECRET_PHRASE" --password-filename "$SECRET_DIR/password.txt" --key-type gran
 }
 
-# Function to setup and start node service (modify the existing function)
+# Function to setup and start node service
 setup_node_service() {
     node_service_file_path="/etc/systemd/system/sugarfunge-node$NODE_NO.service"
     echo "Setting up node service at $node_service_file_path"
-    
-    # Check if the file exists and then remove it
-    if [ -f "$node_service_file_path" ]; then
-        sudo systemctl stop sugarfunge-node$NODE_NO.service
-        sudo systemctl disable sugarfunge-node$NODE_NO.service
-        sudo rm "$node_service_file_path"
-        sudo systemctl daemon-reload
-        echo "Removed $node_service_file_path."
-    else
-        echo "$node_service_file_path does not exist."
-    fi
 
-    # Construct the ExecStart command
+    local USER_NODE
+    USER_NODE=$USER
     NODE_KEY=$(cat "$SECRET_DIR/node_key.txt")
-    EXEC_START="/usr/bin/docker run -u root --rm --name MyNode$NODE_NO --network host -v $SECRET_DIR/password.txt:/password.txt -v $KEYS_DIR:/keys -v $DATA_DIR:/data functionland/sugarfunge-node:amd64-latest --chain /customSpecRaw.json --enable-offchain-indexing true --base-path=/data --keystore-path=/keys --port=$PORT --rpc-port $RPC_PORT --rpc-cors=all --rpc-methods=Unsafe --rpc-external --name Node$NODE_NO --password-filename=\"/password.txt\" --node-key=$NODE_KEY"
-
-    # Add bootnodes parameter if provided
+    BOOTNODES_PARAM=""
     if [ ! -z "$BOOTSTRAP_NODE" ]; then
-        EXEC_START="$EXEC_START --bootnodes $BOOTSTRAP_NODE"
+        BOOTNODES_PARAM="--bootnodes $BOOTSTRAP_NODE"
     fi
-    
-    # Use the variables instead of hardcoded values
+
+    if [ -z "$RELEASE_FLAG" ]; then
+        # Debug mode service configuration
+        EXEC_START="/home/$USER/sugarfunge-node/target/debug/sugarfunge-node --chain /home/$USER/sugarfunge-node/customSpecRaw.json --enable-offchain-indexing true --base-path=$DATA_DIR --keystore-path=$KEYS_DIR --port=$PORT --rpc-port $RPC_PORT --rpc-cors=all --rpc-methods=Unsafe --rpc-external --validator --name Node$NODE_NO --node-key=$NODE_KEY $BOOTNODES_PARAM"
+        USER_NODE=$USER
+        ENVIRONMENT="RUST_LOG=debug,proof_engine=debug,fula-pallet=debug"
+    else
+        # Release mode service configuration
+        EXEC_START="/usr/bin/docker run -u root --rm --name MyNode$NODE_NO --network host -v $SECRET_DIR/password.txt:/password.txt -v $KEYS_DIR:/keys -v $DATA_DIR:/data functionland/sugarfunge-node:amd64-latest --chain /customSpecRaw.json --enable-offchain-indexing true --base-path=/data --keystore-path=/keys --port=$PORT --rpc-port $RPC_PORT --rpc-cors=all --rpc-methods=Unsafe --rpc-external --validator --name Node$NODE_NO --password-filename=\"/password.txt\" --node-key=$NODE_KEY $BOOTNODES_PARAM"
+        USER_NODE="root"
+        ENVIRONMENT=""
+    fi
+
     sudo bash -c "cat > '$node_service_file_path'" << EOF
 [Unit]
 Description=Sugarfunge Node
@@ -189,7 +188,8 @@ After=network.target
 
 [Service]
 Type=simple
-User=root
+User=$USER_NODE
+Environment=$ENVIRONMENT
 ExecStart=$EXEC_START
 Restart=always
 RestartSec=10s
@@ -210,28 +210,28 @@ EOF
 
 # Function to set up and start API service
 setup_api_service() {
-	api_service_file_path="/etc/systemd/system/sugarfunge-api$NODE_NO.service"
-	echo "setup_api_service at $api_service_file_path"
-	# Check if the file exists and then remove it
-	if [ -f "$api_service_file_path" ]; then
-		sudo systemctl stop sugarfunge-api$NODE_NO.service
-		sudo systemctl disable sugarfunge-api$NODE_NO.service
-		sudo rm "$api_service_file_path"
-		sudo systemctl daemon-reload
-		echo "Removed $api_service_file_path."
-	else
-		echo "$api_service_file_path does not exist."
-	fi
-    sudo bash -c "cat > '$api_service_file_path'" << EOF
-[Unit]
-Description=Sugarfunge API$NODE_NO
-After=sugarfunge-node$NODE_NO.service
-Requires=sugarfunge-node$NODE_NO.service
-
-[Service]
-Type=simple
-User=root
-ExecStart=/usr/bin/docker run -u root --rm --name NodeAPI$NODE_NO --network host \
+    api_service_file_path="/etc/systemd/system/sugarfunge-api$NODE_NO.service"
+    echo "Setting up API service at $api_service_file_path"
+    local USER_API
+    USER_API=$USER
+    if [ -z "$RELEASE_FLAG" ]; then
+        # Debug mode service configuration
+        EXEC_START="/home/$USER/sugarfunge-api/target/debug/sugarfunge-api --db-uri=/data --node-server ws://127.0.0.1:$RPC_PORT"
+        USER_API=$USER
+        ENVIRONMENT="RUST_LOG=debug,proof_engine=debug,fula-pallet=debug \
+FULA_SUGARFUNGE_API_HOST=http://127.0.0.1:$HTTP_PORT \
+FULA_CONTRACT_API_HOST=https://contract-api.functionyard.fula.network \
+-LABOR_TOKEN_CLASS_ID=100 \
+LABOR_TOKEN_ASSET_ID=100 \
+CHALLENGE_TOKEN_CLASS_ID=110 \
+CHALLENGE_TOKEN_ASSET_ID=100 \
+LABOR_TOKEN_VALUE=1 \
+CHALLENGE_TOKEN_VALUE=1 \
+CLAIMED_TOKEN_CLASS_ID=120 \
+CLAIMED_TOKEN_ASSET_ID=100"
+    else
+        # Release mode service configuration
+        EXEC_START="/usr/bin/docker run -u root --rm --name NodeAPI$NODE_NO --network host \
 -e FULA_SUGARFUNGE_API_HOST=http://127.0.0.1:$HTTP_PORT \
 -e FULA_CONTRACT_API_HOST=https://contract-api.functionyard.fula.network \
 -e LABOR_TOKEN_CLASS_ID=100 \
@@ -243,17 +243,28 @@ ExecStart=/usr/bin/docker run -u root --rm --name NodeAPI$NODE_NO --network host
 -e CLAIMED_TOKEN_CLASS_ID=120 \
 -e CLAIMED_TOKEN_ASSET_ID=100 \
 -v /var/lib/.sugarfunge-node/.env:/.env -v $DATA_DIR:/data \
-functionland/sugarfunge-api:amd64-latest --db-uri=/data --node-server ws://127.0.0.1:$RPC_PORT
-ExecStop=/usr/bin/docker stop NodeAPI$NODE_NO
-Restart=always
-StandardOutput=file:/var/log/NodeAPI$NODE_NO.log
-StandardError=file:/var/log/NodeAPI$NODE_NO.err
+functionland/sugarfunge-api:amd64-latest --db-uri=/data --node-server ws://127.0.0.1:$RPC_PORT"
+        USER_API="root"
+        ENVIRONMENT=""
+    fi
+
+    sudo bash -c "cat > '$api_service_file_path'" << EOF
+[Unit]
+Description=Sugarfunge API$NODE_NO
+After=sugarfunge-node$NODE_NO.service
+Requires=sugarfunge-node$NODE_NO.service
+
+[Service]
+Type=simple
+User=$USER_API
+Environment=$ENVIRONMENT
+ExecStart=$EXEC_START
 Restart=always
 RestartSec=10s
 StartLimitInterval=5min
 StartLimitBurst=4
-StandardOutput=file:"$LOG_DIR/MyNodeAPI$NODE_NO.log"
-StandardError=file:"$LOG_DIR/MyNodeAPI$NODE_NO.err"
+StandardOutput=file:"$LOG_DIR/NodeAPI$NODE_NO.log"
+StandardError=file:"$LOG_DIR/NodeAPI$NODE_NO.err"
 
 [Install]
 WantedBy=multi-user.target
@@ -262,6 +273,7 @@ EOF
     sudo systemctl daemon-reload
     sudo systemctl enable sugarfunge-api$NODE_NO.service
     sudo systemctl start sugarfunge-api$NODE_NO.service
+    echo "API service has been set up and started."
 }
 
 # Function to install required packages

@@ -151,9 +151,11 @@ Note that the above file will be automatically removed by script at the end of i
 
 --pool: [default=''] this is the pool that go-fula should see as joined
 
+--release default='']: if not set then it runs node and api in debug mode which means running directly from compiled /target/debug using cargo instead of docker
+
 Example
 ```bash
-./nonvalidator_node.sh --user=ubuntu --password='VeryStrongPassword$!' --node=03 --domain=api.test.fx.land --bootnodes=/ip4/127.0.0.1/tcp/30334/p2p/12D3KooWBeXV65svCyknCvG1yLxXVFwRxzBLqvBJnUF6W84BLugv --pool=1
+./nonvalidator_node.sh --release --user=ubuntu --password='VeryStrongPassword$!' --node=03 --domain=api.test.fx.land --bootnodes=/ip4/127.0.0.1/tcp/30334/p2p/12D3KooWBeXV65svCyknCvG1yLxXVFwRxzBLqvBJnUF6W84BLugv --pool=1
 ```
 
 ### Features
