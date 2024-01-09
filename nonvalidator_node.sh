@@ -317,7 +317,7 @@ pull_docker_image_api() {
 
 # Function to configure NGINX for WSS
 configure_nginx() {
-    echo "Configuring NGINX for HTTPS..."
+    echo "Configuring NGINX for HTTP..."
     NGINX_CONF="/etc/nginx/sites-available/default"
 
     # Create a backup of the original default config
@@ -331,17 +331,12 @@ configure_nginx() {
         NEW_SERVER_BLOCK=$(cat <<EOF
 
 server {
-    listen 443 ssl;
+    listen 80;
     server_name $NODE_DOMAIN;
-
-    ssl_certificate /etc/letsencrypt/live/$NODE_DOMAIN/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/$NODE_DOMAIN/privkey.pem;
 
     location / {
         proxy_pass http://127.0.0.1:$HTTP_PORT;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection "upgrade";
         proxy_set_header Host \$host;
     }
 }
