@@ -220,7 +220,7 @@ pull_docker_images() {
 
 # Function to configure NGINX for WSS
 configure_nginx_for_wss() {
-    echo "Configuring NGINX for WSS..."
+    echo "Configuring NGINX for WS..."
 
     # Variables
     NGINX_CONF="/etc/nginx/sites-available/default"
@@ -236,17 +236,12 @@ configure_nginx_for_wss() {
         NEW_WSS_SERVER_BLOCK=$(cat <<EOF
 
 server {
-    listen 443 ssl;
+    listen 80;
     server_name $NODE_DOMAIN; # Replace with your domain name
-
-    ssl_certificate /etc/letsencrypt/live/$NODE_DOMAIN/fullchain.pem; # Replace with your SSL certificate path
-    ssl_certificate_key /etc/letsencrypt/live/$NODE_DOMAIN/privkey.pem; # Replace with your SSL certificate key path
 
     location / {
         proxy_pass http://127.0.0.1:$RPC_PORT; # Replace with the port number of your WebSocket service
         proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection "upgrade";
         proxy_set_header Host \$host;
     }
 }
