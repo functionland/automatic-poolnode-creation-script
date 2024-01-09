@@ -15,10 +15,11 @@ PASSWORD="" # <-- set with --password  or eliminate for a random password
 NODE_DOMAIN="" # <-- set with --domain or eliminate
 BOOTSTRAP_NODE="" # <-- set with --bootnodes or eliminate
 POOL_ID="" # <-- set with --pool or eliminate
+RELEASE_FLAG="" # Set with --release for production build
 
 # Function to show usage
 usage() {
-    echo "Usage: $0 --user=ubuntu --pool=1 --password=12345 --node=03 --domain=test.fx.land --bootnodes=/ip4/127.0.0.1/tcp/30334/p2p/12D3KooWBeXV65svCyknCvG1yLxXVFwRxzBLqvBJnUF6W84BLugv"
+    echo "Usage: $0 --user=ubuntu --release --pool=1 --password=12345 --node=03 --domain=test.fx.land --bootnodes=/ip4/127.0.0.1/tcp/30334/p2p/12D3KooWBeXV65svCyknCvG1yLxXVFwRxzBLqvBJnUF6W84BLugv"
     exit 1
 }
 
@@ -434,7 +435,11 @@ clone_and_build_node() {
         git clone https://github.com/functionland/sugarfunge-node.git
     fi
     cd sugarfunge-node
-    cargo build --release
+    if [ ! -z "$RELEASE_FLAG" ]; then
+        cargo build --release
+    else
+        cargo build
+    fi
     cd ..
 }
 
@@ -456,7 +461,11 @@ clone_and_build_proof_engine() {
         git clone https://github.com/functionland/proof-engine.git
     fi
     cd proof-engine
-    cargo build --release
+    if [ ! -z "$RELEASE_FLAG" ]; then
+        cargo build --release
+    else
+        cargo build
+    fi
     cd ..
 }
 
@@ -467,7 +476,11 @@ clone_and_build_api() {
         git clone https://github.com/functionland/sugarfunge-api.git
     fi
     cd sugarfunge-api
-    cargo build --release
+    if [ ! -z "$RELEASE_FLAG" ]; then
+        cargo build --release
+    else
+        cargo build
+    fi
     cd ..
 }
 
