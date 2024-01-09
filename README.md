@@ -45,15 +45,6 @@ Secret phrase:       xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx
   Public key (SS58): 5Cxxxxxxx
   SS58 Address:      5Cxxxxxxx
   
-Grandpa account1:
-Secret phrase:       xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx
-  Network ID:        substrate
-  Secret seed:       0xb0000000
-  Public key (hex):  0xa0000000
-  Account ID:        0xa0000000
-  Public key (SS58): 5Fxxxxxxxx
-  SS58 Address:      5Fxxxxxxxx
-  
 peerID: 12D3Kooxxxxxxx
 nodeKey: 1xxxxxxxxxxxx
 ```
@@ -124,15 +115,6 @@ Secret phrase:       xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx
   Account ID:        0x18000000
   Public key (SS58): 5Cxxxxxxx
   SS58 Address:      5Cxxxxxxx
-  
-Grandpa account1:
-Secret phrase:       xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx
-  Network ID:        substrate
-  Secret seed:       0xb0000000
-  Public key (hex):  0xa0000000
-  Account ID:        0xa0000000
-  Public key (SS58): 5Fxxxxxxxx
-  SS58 Address:      5Fxxxxxxxx
 ```
 
 Note that the above file will be automatically removed by script at the end of installation. Then you can run the command with required parameters
