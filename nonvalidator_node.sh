@@ -703,7 +703,7 @@ main() {
     export DEBIAN_FRONTEND=noninteractive
 	echo "\$nrconf{restart} = 'a';" | sudo tee /etc/needrestart/needrestart.conf
 
-    echo "User: $USER is setting up Validator No: $NODE_NO on RPC PORT:$RPC_PORT with password:$PASSWORD"
+    echo "User: $USER is setting up None-Validator No: $NODE_NO on RPC PORT:$RPC_PORT with password:$PASSWORD"
 
     # Install required packages
     echo "Installing required packages"
