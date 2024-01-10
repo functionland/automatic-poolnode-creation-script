@@ -732,6 +732,9 @@ main() {
     echo "Cloning and building node"
     clone_and_build_node
 
+    echo "Cloning and building node"
+    clone_and_build_api
+
     # Clone and build the necessary repositories
     echo "Cloning and building fula"
     clone_and_build_fula
