@@ -44,7 +44,11 @@ while [ "$1" != "" ]; do
         --bootnodes=*)
             BOOTSTRAP_NODE="${1#*=}"
             ;;
+        --release=*)
+            RELEASE_FLAG="release"
+            ;;
         *)
+            echo "$1 i not supported"
             usage
             ;;
     esac
