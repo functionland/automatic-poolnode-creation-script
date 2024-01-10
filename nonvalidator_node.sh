@@ -481,9 +481,9 @@ clone_and_build_proof_engine() {
     fi
     cd proof-engine
     if [ ! -z "$RELEASE_FLAG" ]; then
-        cargo build --release
+        cargo build --release --features headless
     else
-        cargo build
+        cargo build --features headless
     fi
     cd ..
 }
