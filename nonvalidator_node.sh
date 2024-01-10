@@ -44,7 +44,7 @@ while [ "$1" != "" ]; do
         --bootnodes=*)
             BOOTSTRAP_NODE="${1#*=}"
             ;;
-        --release=*)
+        --release)
             RELEASE_FLAG="release"
             ;;
         *)
