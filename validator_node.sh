@@ -122,12 +122,12 @@ read_keys_from_file() {
 
 
     # Save the extracted values to respective files for later use
-    echo -n "$SECRET_PHRASE" > "$SECRET_DIR/secret_phrase.txt"
-    echo -n "$SECRET_SEED" > "$SECRET_DIR/secret_seed.txt"
-    echo -n "$PUBLIC_KEY_SS58" > "$SECRET_DIR/account.txt"
-    echo -n "$PEER_ID" > "$SECRET_DIR/node_peerid.txt"
-    echo -n "$NODE_KEY" > "$SECRET_DIR/node_key.txt"
-    echo -n "$PASSWORD" > "$SECRET_DIR/password.txt"
+    echo -n "${SECRET_PHRASE##*( )}" | sed 's/ *$//' > "$SECRET_DIR/secret_phrase.txt"
+    echo -n "${SECRET_SEED##*( )}" | sed 's/ *$//' > "$SECRET_DIR/secret_seed.txt"
+    echo -n "${PUBLIC_KEY_SS58##*( )}" | sed 's/ *$//' > "$SECRET_DIR/account.txt"
+    echo -n "${PASSWORD##*( )}" | sed 's/ *$//' > "$SECRET_DIR/password.txt"
+    echo -n "${PEER_ID##*( )}" | sed 's/ *$//' > "$SECRET_DIR/node_peerid.txt"
+    echo -n "${NODE_KEY##*( )}" | sed 's/ *$//' > "$SECRET_DIR/node_key.txt"
 }
 
 # Function to insert keys into the node (Aura and Grandpa accounts)
