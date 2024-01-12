@@ -158,7 +158,7 @@ setup_and_extract_keys() {
 	echo "setup_and_extract_keys"
     mkdir -p "$SECRET_DIR"
     if [ ! -f "$SECRET_DIR/secret_phrase.txt" ] || [ ! -f "$SECRET_DIR/secret_seed.txt" ]; then
-        output=$(/home/$USER/sugarfunge-node/target/release/sugarfunge-node key generate --scheme Sr25519 --password-filename="$PASSWORD_FILE" 2>&1)
+        output=$(/home/$USER/sugarfunge-node/target/release/sugarfunge-node key generate --scheme Sr25519 --password="$(cat "$PASSWORD_FILE")" 2>&1)
         echo "$output"
         secret_phrase=$(echo "$output" | grep "Secret phrase:" | awk '{$1=$2=""; print $0}' | sed 's/^[ \t]*//;s/[ \t]*$//')
         echo -n "$secret_phrase" > "$SECRET_DIR/secret_phrase.txt"
@@ -175,8 +175,8 @@ setup_and_extract_keys() {
 insert_keys() {
 	echo "insert_keys"
     secret_phrase=$(cat "$SECRET_DIR/secret_phrase.txt")
-    /home/$USER/sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --chain $HOME/sugarfunge-node/customSpecRaw.json --scheme Sr25519 --suri "$secret_phrase" --password-filename "$PASSWORD_FILE" --key-type aura
-    /home/$USER/sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --chain $HOME/sugarfunge-node/customSpecRaw.json --scheme Ed25519 --suri "$secret_phrase" --password-filename "$PASSWORD_FILE" --key-type gran
+    /home/$USER/sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --chain $HOME/sugarfunge-node/customSpecRaw.json --scheme Sr25519 --suri "$secret_phrase" --password "$(cat "$PASSWORD_FILE")" --key-type aura
+    /home/$USER/sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --chain $HOME/sugarfunge-node/customSpecRaw.json --scheme Ed25519 --suri "$secret_phrase" --password "$(cat "$PASSWORD_FILE")" --key-type gran
 }
 
 # Function to set up and start node service
