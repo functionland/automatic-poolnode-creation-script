@@ -175,12 +175,12 @@ setup_node_service() {
 
     if [ -z "$RELEASE_FLAG" ]; then
         # Debug mode service configuration
-        EXEC_START="/home/$USER/sugarfunge-node/target/debug/sugarfunge-node --chain /home/$USER/sugarfunge-node/customSpecRaw.json --enable-offchain-indexing true --base-path=$DATA_DIR --keystore-path=$KEYS_DIR --port=$PORT --rpc-port $RPC_PORT --rpc-cors=all --rpc-methods=Unsafe --rpc-external --validator --name Node$NODE_NO --node-key=$NODE_KEY $BOOTNODES_PARAM"
+        EXEC_START="/home/$USER/sugarfunge-node/target/debug/sugarfunge-node --chain /home/$USER/sugarfunge-node/customSpecRaw.json --enable-offchain-indexing true --base-path=$DATA_DIR --keystore-path=$KEYS_DIR --port=$PORT --rpc-port $RPC_PORT --rpc-cors=all --rpc-methods=Unsafe --rpc-external --name Node$NODE_NO --node-key=$NODE_KEY $BOOTNODES_PARAM"
         USER_NODE=$USER
         ENVIRONMENT="RUST_LOG=debug,proof_engine=debug,fula-pallet=debug"
     else
         # Release mode service configuration
-        EXEC_START="/usr/bin/docker run -u root --rm --name MyNode$NODE_NO --network host -v $SECRET_DIR/password.txt:/password.txt -v $KEYS_DIR:/keys -v $DATA_DIR:/data functionland/sugarfunge-node:amd64-latest --chain /customSpecRaw.json --enable-offchain-indexing true --base-path=/data --keystore-path=/keys --port=$PORT --rpc-port $RPC_PORT --rpc-cors=all --rpc-methods=Unsafe --rpc-external --validator --name Node$NODE_NO --password-filename=\"/password.txt\" --node-key=$NODE_KEY $BOOTNODES_PARAM"
+        EXEC_START="/usr/bin/docker run -u root --rm --name MyNode$NODE_NO --network host -v $SECRET_DIR/password.txt:/password.txt -v $KEYS_DIR:/keys -v $DATA_DIR:/data functionland/sugarfunge-node:amd64-latest --chain /customSpecRaw.json --enable-offchain-indexing true --base-path=/data --keystore-path=/keys --port=$PORT --rpc-port $RPC_PORT --rpc-cors=all --rpc-methods=Unsafe --rpc-external --name Node$NODE_NO --password-filename=\"/password.txt\" --node-key=$NODE_KEY $BOOTNODES_PARAM"
         USER_NODE="root"
         ENVIRONMENT=""
     fi
