@@ -1,14 +1,12 @@
 package main
 
-//IPFS Mock server
-
 import (
 	"encoding/json"
 	"log"
 	"net/http"
 )
 
-// Response structs as defined in your code snippet
+// Define the response structures as per your code
 type PinListResp struct {
 	PinLsList struct {
 		Keys map[string]pinListKeysType `json:"Keys,omitempty"`
@@ -68,7 +66,7 @@ type PeerStats struct {
 func main() {
 	http.HandleFunc("/api/v0/pin/ls", func(w http.ResponseWriter, r *http.Request) {
 		resp := PinListResp{}
-		resp.PinLsList.Keys = map[string]pinListKeysType{"QmcwQBzZcFVa7gyEQazd9WryzXKVMK2TvwBweruBZhy3pf": {Type: "test"}}
+		resp.PinLsList.Keys = map[string]pinListKeysType{"QmcwQBzZcFVa7gyEQazd9WryzXKVMK2TvwBweruBZhy3pf": {Type: "direct"}}
 		json.NewEncoder(w).Encode(resp)
 	})
 
@@ -109,7 +107,7 @@ func main() {
 			MessagesReceived: 15,
 			Peers:            []string{"peer1", "peer2"},
 			ProvideBufLen:    0,
-			Wantlist:         []string{},
+			Wantlist:         []string{"item1", "item2"},
 		}
 		json.NewEncoder(w).Encode(resp)
 	})
@@ -125,9 +123,7 @@ func main() {
 		json.NewEncoder(w).Encode(resp)
 	})
 
-	// Handling other endpoints
 	http.HandleFunc("/api/v0/block/stat", func(w http.ResponseWriter, r *http.Request) {
-		// This is a simplified mock response, adjust as needed
 		resp := struct {
 			Key  string `json:"Key"`
 			Size int    `json:"Size"`
@@ -139,17 +135,25 @@ func main() {
 	})
 
 	http.HandleFunc("/api/v0/id", func(w http.ResponseWriter, r *http.Request) {
-		// This is a simplified mock response, adjust as needed
 		resp := struct {
-			ID string `json:"ID"`
+			Addresses       []string `json:"Addresses"`
+			AgentVersion    string   `json:"AgentVersion"`
+			ID              string   `json:"ID"`
+			ProtocolVersion string   `json:"ProtocolVersion"`
+			Protocols       []string `json:"Protocols"`
+			PublicKey       string   `json:"PublicKey"`
 		}{
-			ID: "mockID",
+			Addresses:       []string{"mockAddress1", "mockAddress2"},
+			AgentVersion:    "mockAgentVersion",
+			ID:              "mockID",
+			ProtocolVersion: "mockProtocolVersion",
+			Protocols:       []string{"mockProtocol1", "mockProtocol2"},
+			PublicKey:       "mockPublicKey",
 		}
 		json.NewEncoder(w).Encode(resp)
 	})
 
 	http.HandleFunc("/api/v0/log/level", func(w http.ResponseWriter, r *http.Request) {
-		// This is a simplified mock response, adjust as needed
 		resp := struct {
 			Message string `json:"Message"`
 		}{
@@ -159,7 +163,6 @@ func main() {
 	})
 
 	http.HandleFunc("/api/v0/stats/bw", func(w http.ResponseWriter, r *http.Request) {
-		// This is a simplified mock response, adjust as needed
 		resp := struct {
 			TotalIn  int64   `json:"TotalIn"`
 			TotalOut int64   `json:"TotalOut"`
@@ -180,6 +183,6 @@ func main() {
 	})
 
 	// Start server
-	log.Println("Mock IPFS server running on http://127.0.0.1:5001")
-	log.Fatal(http.ListenAndServe(":5001", nil))
+	log.Println("Mock IPFS server running on http://localhost:8080")
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
