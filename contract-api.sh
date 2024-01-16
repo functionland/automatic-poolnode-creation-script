@@ -132,7 +132,7 @@ Description=Fula Contract API
 TimeoutStartSec=0
 Type=simple
 User=root
-ExecStart=/home/$USER/fula-contract-api/target/$BUILD_TYPE/fula-contract-api --node-server=$NODE_SERVER_WS
+ExecStart=/home/$USER/fula-contract-api/target/$BUILD_TYPE/functionland-contract-api --node-server=$NODE_SERVER_WS
 Restart=always
 RestartSec=10s
 StartLimitInterval=5min
