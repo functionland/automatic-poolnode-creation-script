@@ -105,9 +105,9 @@ func main() {
 			DupBlksReceived:  2,
 			DupDataReceived:  512,
 			MessagesReceived: 15,
-			Peers:            []string{"peer1", "peer2"},
+			Peers:            []string{},
 			ProvideBufLen:    0,
-			Wantlist:         []string{"item1", "item2"},
+			Wantlist:         []string{},
 		}
 		json.NewEncoder(w).Encode(resp)
 	})
@@ -115,7 +115,7 @@ func main() {
 	http.HandleFunc("/api/v0/bitswap/ledger", func(w http.ResponseWriter, r *http.Request) {
 		resp := PeerStats{
 			Exchanged: 0,
-			Peer:      "mockPeerID",
+			Peer:      "12D3KooWSsLpPjGu87n4HxX2Hg1EbvZPHwAqjbmAopFifYEg36mr",
 			Recv:      0,
 			Sent:      0,
 			Value:     0,
@@ -143,12 +143,12 @@ func main() {
 			Protocols       []string `json:"Protocols"`
 			PublicKey       string   `json:"PublicKey"`
 		}{
-			Addresses:       []string{"mockAddress1", "mockAddress2"},
+			Addresses:       []string{},
 			AgentVersion:    "mockAgentVersion",
 			ID:              "mockID",
 			ProtocolVersion: "mockProtocolVersion",
 			Protocols:       []string{"mockProtocol1", "mockProtocol2"},
-			PublicKey:       "mockPublicKey",
+			PublicKey:       "12D3KooWSsLpPjGu87n4HxX2Hg1EbvZPHwAqjbmAopFifYEg36mr",
 		}
 		json.NewEncoder(w).Encode(resp)
 	})
