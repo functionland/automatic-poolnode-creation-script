@@ -218,6 +218,7 @@ setup_api_service() {
     echo "Setting up API service at $api_service_file_path"
     local USER_API
     USER_API=$USER
+    sudo cp $HOME/sugarfunge-api/.env.example $HOME/sugarfunge-api/.env
     if [ -z "$RELEASE_FLAG" ]; then
         # Debug mode service configuration
         EXEC_START="/home/$USER/sugarfunge-api/target/debug/sugarfunge-api --db-uri=/data --node-server ws://127.0.0.1:$RPC_PORT"
@@ -246,7 +247,8 @@ CLAIMED_TOKEN_ASSET_ID=100"
 -e CHALLENGE_TOKEN_VALUE=1 \
 -e CLAIMED_TOKEN_CLASS_ID=120 \
 -e CLAIMED_TOKEN_ASSET_ID=100 \
--v /var/lib/.sugarfunge-node/.env:/.env -v $DATA_DIR:/data \
+-v $HOME/sugarfunge-api/.env:/.env \
+-v $DATA_DIR:/data \
 functionland/sugarfunge-api:amd64-latest --db-uri=/data --node-server ws://127.0.0.1:$RPC_PORT"
         USER_API="root"
         ENVIRONMENT=""
