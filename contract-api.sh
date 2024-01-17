@@ -7,10 +7,11 @@ NODE_SERVER_WS="" # Set with --node
 RELEASE_FLAG="" # Set with --release for production build
 DOMAIN="" # Set with --domain
 VALIDATOR_SEED="" # Seed of main validator node, Set with --validator
+API_URL="https://api.node3.functionyard.fula.network"
 
 # Function to show usage
 usage() {
-    echo "Usage: $0 --node=wss://example.com --release --domain=yourdomain.com --validator=0x2222"
+    echo "Usage: $0 --node=wss://example.com --release --domain=yourdomain.com --validator=0x2222 --api=http://127.0.0.1:4000"
     exit 1
 }
 
@@ -22,6 +23,9 @@ while [ "$1" != "" ]; do
             ;;
         --validator=*)
             VALIDATOR_SEED="${1#*=}"
+            ;;
+        --api=*)
+            API_URL="${1#*=}"
             ;;
         --release)
             RELEASE_FLAG="--release"
@@ -172,6 +176,68 @@ check_service() {
     fi
 }
 
+createNeededAssetClasses() {
+    echo "Creating asset classes..."
+
+    # Define the owner
+    OWNER="5CcHZucP2u1FXQW9wuyC11vAVxB3c48pUhc5cc9b3oxbKPL2"
+
+    # Create CLAIM_TOKEN_CLASS
+    curl -X POST "$API_URL/asset/create_class" -H "Content-Type: application/json" -d '{
+        "seed": "'$VALIDATOR_SEED'",
+        "metadata": {
+            "class_name": "CLAIM_TOKEN_CLASS"
+        },
+        "class_id": 120,
+        "owner": "'$OWNER'"
+    }'
+
+    # Create CHALLENGE_TOKEN_CLASS
+    curl -X POST "$API_URL/asset/create_class" -H "Content-Type: application/json" -d '{
+        "seed": "'$VALIDATOR_SEED'",
+        "metadata": {
+            "class_name": "CHALLENGE_TOKEN_CLASS"
+        },
+        "class_id": 110,
+        "owner": "'$OWNER'"
+    }'
+
+    # Create LABOR_TOKEN_CLASS
+    curl -X POST "$API_URL/asset/create_class" -H "Content-Type: application/json" -d '{
+        "seed": "'$VALIDATOR_SEED'",
+        "metadata": {
+            "class_name": "LABOR_TOKEN_CLASS"
+        },
+        "class_id": 100,
+        "owner": "'$OWNER'"
+    }'
+
+    # Create tokens for each class
+    for class_id in 100 110 120; do
+        # Define token name based on class_id
+        token_name=""
+        case $class_id in
+            100) token_name="LABOR_TOKEN" ;;
+            110) token_name="CHALLENGE_TOKEN" ;;
+            120) token_name="CLAIM_TOKEN" ;;
+        esac
+
+        # Create token
+        curl -X POST "$API_URL/asset/create" -H "Content-Type: application/json" -d '{
+            "seed": "'$VALIDATOR_SEED'",
+            "account": "'$OWNER'",
+            "class_id": '$class_id',
+            "asset_id": '$class_id',
+            "metadata": {
+                "token_name": "'$token_name'"
+            }
+        }'
+    done
+
+    echo "Asset classes and tokens created."
+}
+
+
 # Main function
 main() {
     echo "Setting up fula-contract-api with node: $NODE_SERVER_WS and Domain: $DOMAIN"
@@ -183,6 +249,7 @@ main() {
     build_project
     configure_nginx_ssl
     setup_service
+    createNeededAssetClasses
     check_service
 
     echo "Setup complete. Please review the logs and verify the service is running correctly."
