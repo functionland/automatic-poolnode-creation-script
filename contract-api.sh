@@ -3,25 +3,25 @@
 set -e
 
 # Default Variables
-USER="ubuntu" # Modify as needed or set with --user
 NODE_SERVER_WS="" # Set with --node
 RELEASE_FLAG="" # Set with --release for production build
 DOMAIN="" # Set with --domain
+VALIDATOR_SEED="" # Seed of main validator node, Set with --validator
 
 # Function to show usage
 usage() {
-    echo "Usage: $0 --user=ubuntu --node=wss://example.com --release --domain=yourdomain.com"
+    echo "Usage: $0 --node=wss://example.com --release --domain=yourdomain.com --validator=0x2222"
     exit 1
 }
 
 # Parse named parameters
 while [ "$1" != "" ]; do
     case $1 in
-        --user=*)
-            USER="${1#*=}"
-            ;;
         --node=*)
             NODE_SERVER_WS="${1#*=}"
+            ;;
+        --validator=*)
+            VALIDATOR_SEED="${1#*=}"
             ;;
         --release)
             RELEASE_FLAG="--release"
@@ -47,6 +47,11 @@ if [ -z "$DOMAIN" ]; then
     usage
 fi
 
+if [ -z "$VALIDATOR_SEED" ]; then
+    echo "Error: validator seed is required."
+    usage
+fi
+
 # Function to install necessary packages
 install_packages() {
     echo "Installing necessary packages..."
@@ -64,19 +69,19 @@ install_rust() {
 # Function to clone the fula-contract-api repository
 clone_repository() {
     echo "Cloning the fula-contract-api repository..."
-    git clone https://github.com/functionland/fula-contract-api.git "/home/$USER/fula-contract-api"
+    git clone https://github.com/functionland/fula-contract-api.git "$HOME/fula-contract-api"
 }
 
 # Function to set up the .env file
 setup_env_file() {
     echo "Setting up the .env file..."
-    cp "/home/$USER/fula-contract-api/.env.example" "/home/$USER/fula-contract-api/.env"
+    cp "$HOME/fula-contract-api/.env.example" "$HOME/fula-contract-api/.env"
 }
 
 # Function to build the project
 build_project() {
     echo "Building the fula-contract-api project..."
-    cd "/home/$USER/fula-contract-api"
+    cd "$HOME/fula-contract-api"
     if [ ! -z "$RELEASE_FLAG" ]; then
         cargo build --release
     else
@@ -111,7 +116,7 @@ EOF
     sudo systemctl reload nginx
 
     # Obtain SSL certificate
-    sudo certbot --nginx -d $DOMAIN -m $USER@example.com --agree-tos -n --redirect
+    sudo certbot --nginx -d $DOMAIN -m hi@fx.land --agree-tos -n --redirect
 }
 
 # Function to create and enable the service
@@ -121,6 +126,8 @@ setup_service() {
         BUILD_TYPE="release"
     fi
 
+    sudo cp $HOME/fula-contract-api/.env.example $HOME/fula-contract-api/.env
+
     SERVICE_FILE="/etc/systemd/system/fula-contract-api.service"
     echo "Creating the service file at $SERVICE_FILE..."
 
@@ -128,11 +135,14 @@ setup_service() {
 [Unit]
 Description=Fula Contract API
 
+# Load environment variables from the .env file
+EnvironmentFile=$HOME/fula-contract-api/.env
+
 [Service]
 TimeoutStartSec=0
 Type=simple
 User=root
-ExecStart=/home/$USER/fula-contract-api/target/$BUILD_TYPE/functionland-contract-api --node-server=$NODE_SERVER_WS --listen http://127.0.0.1:4001
+ExecStart=$HOME/fula-contract-api/target/$BUILD_TYPE/functionland-contract-api --node-server=$NODE_SERVER_WS --validator-seed $VALIDATOR_SEED --listen http://127.0.0.1:4001
 Restart=always
 RestartSec=10s
 StartLimitInterval=5min
@@ -164,7 +174,7 @@ check_service() {
 
 # Main function
 main() {
-    echo "User: $USER is setting up fula-contract-api with node: $NODE_SERVER_WS and Domain: $DOMAIN"
+    echo "Setting up fula-contract-api with node: $NODE_SERVER_WS and Domain: $DOMAIN"
 
     install_packages
     install_rust
