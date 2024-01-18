@@ -471,7 +471,7 @@ verify_pool_creation() {
     # Get the list of existing pools
     pools_response=$(curl -s -X POST https://api.node3.functionyard.fula.network/fula/pool \
     -H "Content-Type: application/json" \
-     -d "{}")
+    -d "{}")
 
     # Check if the specified region exists in the list of pools
     if echo "$pools_response" | jq --arg region "$region" '.pools[] | select(.region == $region)' | grep -q 'pool_id'; then
