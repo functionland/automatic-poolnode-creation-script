@@ -8,10 +8,11 @@ RELEASE_FLAG="" # Set with --release for production build
 DOMAIN="" # Set with --domain
 VALIDATOR_SEED="" # Seed of main validator node, Set with --validator
 API_URL="https://api.node3.functionyard.fula.network"
+MINTER_ACCOUNT_SEED="" # Seed of an accountwith minter access to ocntract
 
 # Function to show usage
 usage() {
-    echo "Usage: $0 --node=wss://example.com --release --domain=yourdomain.com --validator=0x2222 --api=http://127.0.0.1:4000"
+    echo "Usage: $0 --node=wss://example.com --release --domain=yourdomain.com --validator=0x2222 --minter=0x3333 --api=http://127.0.0.1:4000"
     exit 1
 }
 
@@ -26,6 +27,9 @@ while [ "$1" != "" ]; do
             ;;
         --api=*)
             API_URL="${1#*=}"
+            ;;
+        --minter=*)
+            MINTER_ACCOUNT_SEED="${1#*=}"
             ;;
         --release)
             RELEASE_FLAG="--release"
@@ -53,6 +57,11 @@ fi
 
 if [ -z "$VALIDATOR_SEED" ]; then
     echo "Error: validator seed is required."
+    usage
+fi
+
+if [ -z "$MINTER_ACCOUNT_SEED" ]; then
+    echo "Error: seed of minter is required."
     usage
 fi
 
@@ -131,6 +140,7 @@ setup_service() {
     fi
 
     sudo cp $HOME/fula-contract-api/.env.example $HOME/fula-contract-api/.env
+    sed -i "s/^ACCOUNT_PRIVATE_KEY=\".*\"/ACCOUNT_PRIVATE_KEY=\"$MINTER_ACCOUNT_SEED\"/" "$HOME/fula-contract-api/.env"
 
     SERVICE_FILE="/etc/systemd/system/fula-contract-api.service"
     echo "Creating the service file at $SERVICE_FILE..."
@@ -146,6 +156,7 @@ EnvironmentFile=$HOME/fula-contract-api/.env
 TimeoutStartSec=0
 Type=simple
 User=root
+EnvironmentFile=$HOME/fula-contract-api/.env
 ExecStart=$HOME/fula-contract-api/target/$BUILD_TYPE/functionland-contract-api --node-server=$NODE_SERVER_WS --validator-seed $VALIDATOR_SEED --listen http://127.0.0.1:4001
 Restart=always
 RestartSec=10s
