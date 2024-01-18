@@ -69,7 +69,7 @@ fi
 install_packages() {
     echo "Installing necessary packages..."
     sudo apt-get update -qq
-    sudo apt-get install -y git curl wget build-essential software-properties-common libssl-dev
+    sudo apt-get install -y git curl wget build-essential software-properties-common libssl-dev pkg-config
 }
 
 # Function to install Rust
