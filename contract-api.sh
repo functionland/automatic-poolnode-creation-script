@@ -180,7 +180,7 @@ EOF
 # Function to check the service
 check_service() {
     echo "Checking the fula-contract-api service status..."
-    HTTP_RESPONSE=$(curl -o /dev/null -s -w "%{http_code}\n" -X POST http://127.0.0.1:4001/health)
+    HTTP_RESPONSE=$(curl -o /dev/null -s -w "%{http_code}\n" -X POST http://127.0.0.1:4001/setup)
 
     if [ "$HTTP_RESPONSE" -eq 200 ]; then
         echo "Service is running correctly. HTTP Status: $HTTP_RESPONSE"
