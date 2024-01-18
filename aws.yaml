@@ -1,0 +1,66 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation template for creating an EC2 instance.
+
+Resources:
+  FulaEC2Instance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: t3.2xlarge
+      ImageId: ami-1234567890abcdef0  # Replace with the AMI ID for Ubuntu 22.04 64-bit in your region
+      KeyName: functionland  # Replace with the name of your existing key pair
+      Tags:
+        - Key: Name
+          Value: fula-pool
+        - Key: Group
+          Value: pools
+      NetworkInterfaces:
+        - DeviceIndex: '0'
+          SubnetId: !Ref FulaSubnet
+          AssociatePublicIpAddress: true
+          GroupSet:
+            - !Ref FulaSecurityGroup
+
+  FulaSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupName: fula-node
+      GroupDescription: Security Group for Fula Node
+      VpcId: !Ref FulaVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '443'
+          ToPort: '443'
+          CidrIp: 0.0.0.0/0
+
+  FulaVolume:
+    Type: AWS::EC2::Volume
+    Properties: 
+      Size: 30
+      AvailabilityZone: !GetAtt 
+        - FulaEC2Instance
+        - AvailabilityZone
+      VolumeType: gp2
+
+  FulaVolumeAttachment:
+    Type: AWS::EC2::VolumeAttachment
+    Properties: 
+      InstanceId: !Ref FulaEC2Instance
+      VolumeId: !Ref FulaVolume
+      Device: /dev/sdh
+
+Parameters:
+  FulaVPC:
+    Type: AWS::EC2::VPC::Id
+    Description: The VPC Id where the instance will be launched.
+
+  FulaSubnet:
+    Type: AWS::EC2::Subnet::Id
+    Description: The Subnet Id where the instance will be launched.
