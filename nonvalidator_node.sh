@@ -16,6 +16,7 @@ NODE_DOMAIN="" # <-- set with --domain or eliminate
 BOOTSTRAP_NODE="" # <-- set with --bootnodes or eliminate
 POOL_ID="" # <-- set with --pool or eliminate
 RELEASE_FLAG="" # Set with --release for production build
+ENVIRONMENT="debug"
 
 # Function to show usage
 usage() {
@@ -46,6 +47,7 @@ while [ "$1" != "" ]; do
             ;;
         --release)
             RELEASE_FLAG="release"
+            ENVIRONMENT="release"
             ;;
         *)
             echo "$1 i not supported"
@@ -156,8 +158,8 @@ insert_keys() {
     SECRET_PHRASE=$(cat "$SECRET_DIR/secret_phrase.txt")
 
     # Insert the keys
-    /home/$USER/sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --keystore-path="$KEYS_DIR" --chain "$HOME/sugarfunge-node/customSpecRaw.json" --scheme Sr25519 --suri "$SECRET_PHRASE" --password "$(cat "$SECRET_DIR/password.txt")" --key-type aura
-    /home/$USER/sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --keystore-path="$KEYS_DIR" --chain "$HOME/sugarfunge-node/customSpecRaw.json" --scheme Ed25519 --suri "$SECRET_PHRASE" --password "$(cat "$SECRET_DIR/password.txt")" --key-type gran
+    /home/$USER/sugarfunge-node/target/$ENVIRONMENT/sugarfunge-node key insert --base-path="$DATA_DIR" --keystore-path="$KEYS_DIR" --chain "$HOME/sugarfunge-node/customSpecRaw.json" --scheme Sr25519 --suri "$SECRET_PHRASE" --password "$(cat "$SECRET_DIR/password.txt")" --key-type aura
+    /home/$USER/sugarfunge-node/target/$ENVIRONMENT/sugarfunge-node key insert --base-path="$DATA_DIR" --keystore-path="$KEYS_DIR" --chain "$HOME/sugarfunge-node/customSpecRaw.json" --scheme Ed25519 --suri "$SECRET_PHRASE" --password "$(cat "$SECRET_DIR/password.txt")" --key-type gran
 }
 
 # Function to setup and start node service
@@ -529,7 +531,7 @@ generate_node_key() {
         fi
 		
 		# Generate the peer ID from the node key
-        generated_peer_id=$(/home/$USER/sugarfunge-node/target/release/sugarfunge-node key inspect-node-key --file "$SECRET_DIR/node_key.txt")
+        generated_peer_id=$(/home/$USER/sugarfunge-node/target/$ENVIRONMENT/sugarfunge-node key inspect-node-key --file "$SECRET_DIR/node_key.txt")
         
         # Read the stored peer ID from the file
         stored_peer_id=$(cat "$SECRET_DIR/node_peerid.txt")
