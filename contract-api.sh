@@ -81,8 +81,10 @@ install_rust() {
 
 # Function to clone the fula-contract-api repository
 clone_repository() {
-    echo "Cloning the fula-contract-api repository..."
-    git clone https://github.com/functionland/fula-contract-api.git "$HOME/fula-contract-api"
+    if [ ! -d "fula-contract-api" ] || [ -z "$(ls -A fula-contract-api)" ]; then
+        echo "Cloning the fula-contract-api repository..."
+        git clone https://github.com/functionland/fula-contract-api.git "$HOME/fula-contract-api"
+    fi
 }
 
 # Function to set up the .env file
