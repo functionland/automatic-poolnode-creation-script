@@ -12,7 +12,7 @@ MINTER_ACCOUNT_SEED="" # Seed of an accountwith minter access to ocntract
 
 # Function to show usage
 usage() {
-    echo "Usage: $0 --node=wss://example.com --release --domain=yourdomain.com --validator=0x2222 --minter=0x3333 --api=http://127.0.0.1:4000"
+    echo "Usage: $0 --node=wss://example.com --release --domain=yourdomain.com --validator=0x2222 --minter=3b333 --api=http://127.0.0.1:4000"
     exit 1
 }
 
