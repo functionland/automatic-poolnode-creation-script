@@ -690,6 +690,7 @@ check_services_status() {
         else
             echo "Service $service is running."
         fi
+        sleep 5
     done
 
     # Final check to see if any service wasn't running
@@ -786,7 +787,8 @@ main() {
         echo "NODE_DOMAIN is not set. Skipping SSL and NGINX configuration."
         NODE_ADDRESS="/ip4/127.0.0.1/tcp/$PORT/p2p/$PEER_ID"
     fi
-
+    sleep 10
+    
     echo "Setting up node api service"
     setup_api_service
 
