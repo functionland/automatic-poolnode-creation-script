@@ -1,12 +1,49 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: CloudFormation template for creating an EC2 instance.
-
+Parameters:
+  UbuntuAmiId:
+    Type: String
+    Description: The AMI ID for the Ubuntu instance
 Resources:
+  FulaInternetGateway:
+    Type: AWS::EC2::InternetGateway
+  FulaVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+  FulaRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref FulaVPC
+  FulaVPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref FulaVPC
+      InternetGatewayId: !Ref FulaInternetGateway
+
+  FulaRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref FulaRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref FulaInternetGateway
+  FulaSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref FulaSubnet
+      RouteTableId: !Ref FulaRouteTable
+  FulaSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref FulaVPC
+      CidrBlock: 10.0.0.0/24
   FulaEC2Instance:
     Type: 'AWS::EC2::Instance'
     Properties:
       InstanceType: t3.2xlarge
-      ImageId: ami-1234567890abcdef0  # Replace with the AMI ID for Ubuntu 22.04 64-bit in your region
+      ImageId: !Ref UbuntuAmiId  # Replace with the AMI ID for Ubuntu 22.04 64-bit in your region
       KeyName: functionland  # Replace with the name of your existing key pair
       Tags:
         - Key: Name
@@ -15,8 +52,8 @@ Resources:
           Value: pools
       NetworkInterfaces:
         - DeviceIndex: '0'
-          SubnetId: !Ref FulaSubnet
           AssociatePublicIpAddress: true
+          SubnetId: !Ref FulaSubnet
           GroupSet:
             - !Ref FulaSecurityGroup
 
@@ -55,12 +92,3 @@ Resources:
       InstanceId: !Ref FulaEC2Instance
       VolumeId: !Ref FulaVolume
       Device: /dev/sdh
-
-Parameters:
-  FulaVPC:
-    Type: AWS::EC2::VPC::Id
-    Description: The VPC Id where the instance will be launched.
-
-  FulaSubnet:
-    Type: AWS::EC2::Subnet::Id
-    Description: The Subnet Id where the instance will be launched.

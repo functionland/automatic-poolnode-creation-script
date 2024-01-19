@@ -157,6 +157,28 @@ Example
 - Script Review: Understand the script's actions before execution, particularly in production environments.
 - System Updates: Keep your system and Docker images updated to receive the latest security patches and feature improvements.
 
+## Running an AWS Instance
+
+Run the below command in aws, replacing the ap-south-2 with the region you want:
+```
+REGION=ap-south-2; aws ec2 import-key-pair --key-name functionland --public-key-material file:///home/cloudshell-user/functionland-public.b64 --region $REGION; aws cloudformation create-stack --stack-name FulaEC2Stack --template-body file:///home/cloudshell-user/aws.yaml --parameters ParameterKey=UbuntuAmiId,ParameterValue=$(aws ec2 describe-images --region $REGION --filters "Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*" "Name=state,Values=available" --query "Images | sort_by(@, &CreationDate) | [-1].ImageId" --output text) --region $REGION;
+```
+
+Get the public ip by running:
+```
+aws ec2 describe-instances --region $REGION --query 'Reservations[].Instances[].PublicIpAddress' --output text
+```
+
+ssh into it and run the commands needed:
+```
+ssh -i functionland.pem ubuntu@ip-address
+```
+
+for example clone the repo:
+```
+git clone https://github.com/functionland/automatic-poolnode-creation-script
+bash ~/automatic-poolnode-creation-script/pool_creation.sh 0x1222222
+```
 
 ## Troubleshooting
 - Permission Issues: Run the script with sufficient privileges (sudo may be necessary).
