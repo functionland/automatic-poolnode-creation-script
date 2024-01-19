@@ -20,6 +20,7 @@ get_region_name() {
         af-south-1) echo "AfricaCapeTown" ;;
         ap-east-1) echo "AsiaPacificHongKong" ;;
         ap-south-1) echo "AsiaPacificMumbai" ;;
+        ap-south-2) echo "AsiaPacificHyderabad" ;;
         ap-northeast-3) echo "AsiaPacificOsaka" ;;
         ap-northeast-2) echo "AsiaPacificSeoul" ;;
         ap-southeast-1) echo "AsiaPacificSingapore" ;;
