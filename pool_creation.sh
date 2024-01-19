@@ -566,6 +566,20 @@ cleanup() {
     # Add other cleanup tasks here
 }
 
+zip_and_upload() {
+    local region_name=$1
+    local zip_filename="${region_name}.zip"
+
+    echo "Zipping directories..."
+    zip -r "$zip_filename" "$PASSWORD_FILE" "$SECRET_DIR"
+
+    echo "Uploading $zip_filename to S3..."
+    aws s3 cp "$zip_filename" "s3://fula-pools/$zip_filename"
+
+    echo "Upload complete. Cleaning up local zip file..."
+    rm "$zip_filename"
+}
+
 # Main script execution
 main() {
 	# Set DEBIAN_FRONTEND to noninteractive to avoid interactive prompts
@@ -598,7 +612,7 @@ main() {
 	
     # Update and install dependencies
     sudo apt update
-    sudo apt install -y wget git curl build-essential jq pkg-config libssl-dev protobuf-compiler llvm libclang-dev clang plocate cmake
+    sudo apt install -y awscli zip wget git curl build-essential jq pkg-config libssl-dev protobuf-compiler llvm libclang-dev clang plocate cmake
 
 	# Set LIBCLANG_PATH for the user
     # echo "export LIBCLANG_PATH=/usr/lib/llvm-14/lib/" | sudo tee /etc/profile.d/libclang.sh
@@ -656,6 +670,11 @@ main() {
 	check_services_status
 
     echo "Setup complete. Please review the logs and verify the services are running correctly."
+
+    echo "uploading keys and secrets to aws s3"
+    zip_and_upload $pool_name
+    echo "everything is finished"
+
 }
 
 # Run the main function with the provided region

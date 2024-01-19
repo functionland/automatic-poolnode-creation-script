@@ -1,5 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: CloudFormation template for creating an EC2 instance.
+Description: CloudFormation template for creating an EC2 instance with S3 access.
+
 Parameters:
   UbuntuAmiId:
     Type: String
@@ -7,116 +8,47 @@ Parameters:
   SeedParameter:
     Type: String
     Description: Seed parameter for the pool creation script
+
 Resources:
   FulaInternetGateway:
     Type: AWS::EC2::InternetGateway
+
   FulaVPC:
     Type: AWS::EC2::VPC
     Properties:
       CidrBlock: 10.0.0.0/16
       EnableDnsSupport: true
       EnableDnsHostnames: true
+
   FulaRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref FulaVPC
+
   FulaVPCGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
       VpcId: !Ref FulaVPC
       InternetGatewayId: !Ref FulaInternetGateway
+
   FulaRoute:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref FulaRouteTable
       DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref FulaInternetGateway
+
   FulaSubnetRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       SubnetId: !Ref FulaSubnet
       RouteTableId: !Ref FulaRouteTable
+
   FulaSubnet:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref FulaVPC
       CidrBlock: 10.0.0.0/24
-  FulaInstanceProfile:
-    Type: AWS::IAM::InstanceProfile
-    Properties:
-      Roles:
-        - !Ref FulaInstanceRole
-  FulaInstanceRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: ec2.amazonaws.com
-            Action: sts:AssumeRole
-      Policies:
-        - PolicyName: "fula-pools"
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - s3:PutObject
-                  - s3:GetObject
-                  # ... Add other permissions as needed
-                Resource: "arn:aws:s3:::fula-pools/*"
-  FulaEC2Instance:
-    Type: 'AWS::EC2::Instance'
-    Properties:
-      InstanceType: t3.2xlarge
-      IamInstanceProfile: !Ref FulaInstanceProfile
-      ImageId: !Ref UbuntuAmiId  # Replace with the AMI ID for Ubuntu 22.04 64-bit in your region
-      KeyName: functionland  # Replace with the name of your existing key pair
-      Tags:
-        - Key: Name
-          Value: fula-pool
-        - Key: Group
-          Value: pools
-      NetworkInterfaces:
-        - DeviceIndex: '0'
-          AssociatePublicIpAddress: true
-          SubnetId: !Ref FulaSubnet
-          GroupSet:
-            - !Ref FulaSecurityGroup
-      BlockDeviceMappings:
-      - DeviceName: /dev/sda1
-        Ebs:
-          VolumeSize: 30
-          DeleteOnTermination: true
-          VolumeType: gp2
-      UserData:
-        Fn::Base64: !Sub |
-          #!/bin/bash
-          # Wait for the attached volume to become available
-          while [ ! -e /dev/nvme1n1 ]; do
-            sleep 1
-          done
-          echo "done"
-
-          # Create a filesystem on the volume (if it's new)
-          sudo mkfs -t ext4 /dev/nvme1n1 
-
-          # Create the mount point directory
-          sudo mkdir -p /uniondrive
-
-          # Mount the volume
-          sudo mount /dev/nvme1n1  /uniondrive
-
-          # Add an entry to /etc/fstab to auto-mount the volume on reboot
-          echo "/dev/nvme1n1  /uniondrive ext4 defaults,nofail 0 2" >> /etc/fstab
-
-          # Clone the repository
-          git clone https://github.com/functionland/automatic-poolnode-creation-script /uniondrive/automatic-poolnode-creation-script
-
-          # Run the script with the provided seed parameter
-          bash /uniondrive/automatic-poolnode-creation-script/pool_creation.sh --seed ${SeedParameter}
 
   FulaSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
@@ -140,16 +72,92 @@ Resources:
 
   FulaVolume:
     Type: AWS::EC2::Volume
-    Properties: 
+    Properties:
       Size: 30
-      AvailabilityZone: !GetAtt 
-        - FulaEC2Instance
-        - AvailabilityZone
+      AvailabilityZone: !GetAtt FulaEC2Instance.AvailabilityZone
       VolumeType: gp2
 
   FulaVolumeAttachment:
     Type: AWS::EC2::VolumeAttachment
-    Properties: 
+    Properties:
       InstanceId: !Ref FulaEC2Instance
       VolumeId: !Ref FulaVolume
       Device: /dev/sdh
+
+  FulaInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: FulaInstancePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource: 'arn:aws:s3:::fula-pools/*'
+
+  FulaInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref FulaInstanceRole
+
+  FulaEC2Instance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: t3.2xlarge
+      IamInstanceProfile: !Ref FulaInstanceProfile
+      ImageId: !Ref UbuntuAmiId
+      KeyName: functionland
+      Tags:
+        - Key: Name
+          Value: fula-pool
+        - Key: Group
+          Value: pools
+      NetworkInterfaces:
+        - DeviceIndex: '0'
+          AssociatePublicIpAddress: true
+          SubnetId: !Ref FulaSubnet
+          GroupSet:
+            - !Ref FulaSecurityGroup
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeSize: 30
+            DeleteOnTermination: true
+            VolumeType: gp2
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          # Wait for the attached volume to become available
+          while [ ! -e /dev/nvme1n1 ]; do
+            sleep 1
+          done
+          echo "done"
+
+          # Create a filesystem on the volume (if it's new)
+          sudo mkfs -t ext4 /dev/nvme1n1 
+
+          # Create the mount point directory
+          sudo mkdir -p /uniondrive
+
+          # Mount the volume
+          sudo mount /dev/nvme1n1 /uniondrive
+
+          # Add an entry to /etc/fstab to auto-mount the volume on reboot
+          echo "/dev/nvme1n1 /uniondrive ext4 defaults,nofail 0 2" >> /etc/fstab
+
+          # Clone the repository
+          git clone https://github.com/functionland/automatic-poolnode-creation-script /uniondrive/automatic-poolnode-creation-script
+
+          # Run the script with the provided seed parameter
+          bash /uniondrive/automatic-poolnode-creation-script/pool_creation.sh --seed ${SeedParameter}
