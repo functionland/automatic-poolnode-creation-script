@@ -139,10 +139,10 @@ Resources:
         Fn::Base64: !Sub |
           #!/bin/bash
           # Wait for the attached volume to become available
-          while [ ! -e /dev/nvme1n1 ]; do
+          while ! sudo lsblk | grep -q nvme1n1; do
             sleep 1
           done
-          echo "done"
+          echo "EBS volume is attached"
 
           # Create a filesystem on the volume (if it's new)
           sudo mkfs -t ext4 /dev/nvme1n1 
