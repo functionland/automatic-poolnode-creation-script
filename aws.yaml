@@ -25,7 +25,6 @@ Resources:
     Properties:
       VpcId: !Ref FulaVPC
       InternetGatewayId: !Ref FulaInternetGateway
-
   FulaRoute:
     Type: AWS::EC2::Route
     Properties:
@@ -42,10 +41,37 @@ Resources:
     Properties:
       VpcId: !Ref FulaVPC
       CidrBlock: 10.0.0.0/24
+  FulaInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref FulaInstanceRole
+  FulaInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: "fula-pools"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  # ... Add other permissions as needed
+                Resource: "arn:aws:s3:::fula-pools/*"
   FulaEC2Instance:
     Type: 'AWS::EC2::Instance'
     Properties:
       InstanceType: t3.2xlarge
+      IamInstanceProfile: !Ref FulaInstanceProfile
       ImageId: !Ref UbuntuAmiId  # Replace with the AMI ID for Ubuntu 22.04 64-bit in your region
       KeyName: functionland  # Replace with the name of your existing key pair
       Tags:
@@ -69,21 +95,22 @@ Resources:
         Fn::Base64: !Sub |
           #!/bin/bash
           # Wait for the attached volume to become available
-          while [ ! -e /dev/sdh ]; do
+          while [ ! -e /dev/nvme1n1 ]; do
             sleep 1
           done
+          echo "done"
 
           # Create a filesystem on the volume (if it's new)
-          mkfs -t ext4 /dev/sdh
+          sudo mkfs -t ext4 /dev/nvme1n1 
 
           # Create the mount point directory
-          mkdir -p /uniondrive
+          sudo mkdir -p /uniondrive
 
           # Mount the volume
-          mount /dev/sdh /uniondrive
+          sudo mount /dev/nvme1n1  /uniondrive
 
           # Add an entry to /etc/fstab to auto-mount the volume on reboot
-          echo "/dev/sdh /uniondrive ext4 defaults,nofail 0 2" >> /etc/fstab
+          echo "/dev/nvme1n1  /uniondrive ext4 defaults,nofail 0 2" >> /etc/fstab
 
           # Clone the repository
           git clone https://github.com/functionland/automatic-poolnode-creation-script /uniondrive/automatic-poolnode-creation-script
