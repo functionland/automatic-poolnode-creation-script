@@ -150,11 +150,10 @@ Resources:
           # Create the mount point directory
           sudo mkdir -p /uniondrive
 
-          sudo chown ubuntu:ubuntu /uniondrive
-
           # Mount the volume
           sudo mount /dev/nvme1n1 /uniondrive
-
+          sudo chown ubuntu:ubuntu /uniondrive
+          sudo chmod 777 -R /uniondrive
           # Add an entry to /etc/fstab to auto-mount the volume on reboot
           echo "/dev/nvme1n1 /uniondrive ext4 defaults,nofail 0 2" | sudo tee -a /etc/fstab
 
