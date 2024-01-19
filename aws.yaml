@@ -154,10 +154,10 @@ Resources:
           sudo mount /dev/nvme1n1 /uniondrive
 
           # Add an entry to /etc/fstab to auto-mount the volume on reboot
-          echo "/dev/nvme1n1 /uniondrive ext4 defaults,nofail 0 2" >> /etc/fstab
+          echo "/dev/nvme1n1 /uniondrive ext4 defaults,nofail 0 2" | sudo tee -a /etc/fstab
 
           # Clone the repository
-          git clone https://github.com/functionland/automatic-poolnode-creation-script /uniondrive/automatic-poolnode-creation-script
+          git clone https://github.com/functionland/automatic-poolnode-creation-script ~/automatic-poolnode-creation-script
 
           # Run the script with the provided seed parameter
-          bash /uniondrive/automatic-poolnode-creation-script/pool_creation.sh --seed ${SeedParameter}
+          bash ~/automatic-poolnode-creation-script/pool_creation.sh --seed ${SeedParameter}
