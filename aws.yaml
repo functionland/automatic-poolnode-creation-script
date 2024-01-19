@@ -4,6 +4,9 @@ Parameters:
   UbuntuAmiId:
     Type: String
     Description: The AMI ID for the Ubuntu instance
+  SeedParameter:
+    Type: String
+    Description: Seed parameter for the pool creation script
 Resources:
   FulaInternetGateway:
     Type: AWS::EC2::InternetGateway
@@ -56,6 +59,37 @@ Resources:
           SubnetId: !Ref FulaSubnet
           GroupSet:
             - !Ref FulaSecurityGroup
+      BlockDeviceMappings:
+      - DeviceName: /dev/sda1
+        Ebs:
+          VolumeSize: 30
+          DeleteOnTermination: true
+          VolumeType: gp2
+      UserData:
+      Fn::Base64: !Sub |
+        #!/bin/bash
+        # Wait for the attached volume to become available
+        while [ ! -e /dev/sdh ]; do
+          sleep 1
+        done
+
+        # Create a filesystem on the volume (if it's new)
+        mkfs -t ext4 /dev/sdh
+
+        # Create the mount point directory
+        mkdir -p /uniondrive
+
+        # Mount the volume
+        mount /dev/sdh /uniondrive
+
+        # Add an entry to /etc/fstab to auto-mount the volume on reboot
+        echo "/dev/sdh /uniondrive ext4 defaults,nofail 0 2" >> /etc/fstab
+
+        # Clone the repository
+        git clone https://github.com/functionland/automatic-poolnode-creation-script /uniondrive/automatic-poolnode-creation-script
+
+        # Run the script with the provided seed parameter
+        bash /uniondrive/automatic-poolnode-creation-script/pool_creation.sh --seed ${SeedParameter}
 
   FulaSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'

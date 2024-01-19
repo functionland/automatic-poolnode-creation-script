@@ -6,8 +6,9 @@ set -e
 USER="ubuntu"
 PASSWORD_FILE="/home/$USER/password.txt"
 SECRET_DIR="/home/$USER/.secrets"
-DATA_DIR="/home/$USER/data"
+DATA_DIR="/uniondrive/data"
 LOG_DIR="/var/log"
+mkdir -p $DATA_DIR
 
 # Function to map AWS region to your custom region naming convention
 get_region_name() {
