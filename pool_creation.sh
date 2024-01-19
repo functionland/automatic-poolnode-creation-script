@@ -8,6 +8,7 @@ PASSWORD_FILE="/home/$USER/password.txt"
 SECRET_DIR="/home/$USER/.secrets"
 DATA_DIR="/uniondrive/data"
 LOG_DIR="/var/log"
+USER_HOME="/home/ubuntu"
 mkdir -p $DATA_DIR
 
 # Function to map AWS region to your custom region naming convention
@@ -118,7 +119,7 @@ install_go() {
 install_rust() {
 	echo "Installing rust"
     curl https://sh.rustup.rs -sSf | sh -s -- -y
-    source "$HOME/.cargo/env"
+    source "$USER_HOME/.cargo/env"
 	
 	rustup default stable
 	rustup update nightly
@@ -177,8 +178,8 @@ setup_and_extract_keys() {
 insert_keys() {
 	echo "insert_keys"
     secret_phrase=$(cat "$SECRET_DIR/secret_phrase.txt")
-    /home/$USER/sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --chain $HOME/sugarfunge-node/customSpecRaw.json --scheme Sr25519 --suri "$secret_phrase" --password "$(cat "$PASSWORD_FILE")" --key-type aura
-    /home/$USER/sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --chain $HOME/sugarfunge-node/customSpecRaw.json --scheme Ed25519 --suri "$secret_phrase" --password "$(cat "$PASSWORD_FILE")" --key-type gran
+    /home/$USER/sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --chain $USER_HOME/sugarfunge-node/customSpecRaw.json --scheme Sr25519 --suri "$secret_phrase" --password "$(cat "$PASSWORD_FILE")" --key-type aura
+    /home/$USER/sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --chain $USER_HOME/sugarfunge-node/customSpecRaw.json --scheme Ed25519 --suri "$secret_phrase" --password "$(cat "$PASSWORD_FILE")" --key-type gran
 }
 
 # Function to set up and start node service
@@ -203,8 +204,8 @@ After=network.target
 [Service]
 Type=simple
 User=$USER
-ExecStart=$HOME/sugarfunge-node/target/release/sugarfunge-node \
-    --chain $HOME/sugarfunge-node/customSpecRaw.json \
+ExecStart=$USER_HOME/sugarfunge-node/target/release/sugarfunge-node \
+    --chain $USER_HOME/sugarfunge-node/customSpecRaw.json \
     --enable-offchain-indexing true \
     --base-path="$DATA_DIR" \
     --keystore-path="$SECRET_DIR" \
@@ -257,7 +258,7 @@ Requires=sugarfunge-node.service
 [Service]
 Type=simple
 User=$USER
-ExecStart=$HOME/sugarfunge-api/target/release/sugarfunge-api \
+ExecStart=$USER_HOME/sugarfunge-api/target/release/sugarfunge-api \
     --db-uri="$DATA_DIR" \
     --node-server ws://127.0.0.1:9944
 Environment=FULA_SUGARFUNGE_API_HOST=http://127.0.0.1:4000 \
