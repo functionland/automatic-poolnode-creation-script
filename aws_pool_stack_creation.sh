@@ -35,7 +35,14 @@ process_region() {
     # Import key pair and create CloudFormation stack
     # Import key pair
     aws ec2 import-key-pair --key-name functionland --public-key-material file:///home/cloudshell-user/functionland-public.b64 --region $region
-
+    stack_status=$(aws cloudformation describe-stacks --stack-name FulaEC2Stack --region $region --query 'Stacks[0].StackStatus' --output text 2>&1)
+    # If the stack is in ROLLBACK_COMPLETE status, delete it
+    if [ "$stack_status" == "ROLLBACK_COMPLETE" ]; then
+        echo "Stack in ROLLBACK_COMPLETE status, deleting stack in region $region"
+        aws cloudformation delete-stack --stack-name FulaEC2Stack --region $region
+        echo "Waiting for stack deletion to complete..."
+        aws cloudformation wait stack-delete-complete --stack-name FulaEC2Stack --region $region
+    fi
     # Create CloudFormation stack
     creation_output=$(aws cloudformation create-stack --stack-name FulaEC2Stack --template-body file:///home/cloudshell-user/aws.yaml --parameters ParameterKey=UbuntuAmiId,ParameterValue=$(aws ec2 describe-images --region $region --filters "Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*" "Name=state,Values=available" --query "Images | sort_by(@, &CreationDate) | [-1].ImageId" --output text) ParameterKey=SeedParameter,ParameterValue="$seed_parameter" --region $region --capabilities CAPABILITY_IAM 2>&1)
 
@@ -57,7 +64,11 @@ process_region() {
         echo "Stack already exists in region $region"
 
     else
-        echo "Stack creation failed in region $region"
+        echo "Stack creation failed in region $region, attempting to delete stack"
+        aws cloudformation describe-stack-events --stack-name FulaEC2Stack --region $region --query 'StackEvents[?ResourceStatus==`CREATE_FAILED`].[ResourceStatusReason]' --output text
+        aws cloudformation delete-stack --stack-name FulaEC2Stack --region $region
+        echo "Waiting for stack deletion to complete..."
+        aws cloudformation wait stack-delete-complete --stack-name FulaEC2Stack --region $region
         failed_regions+=("$region")
     fi
 }
