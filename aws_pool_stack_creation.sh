@@ -2,6 +2,16 @@
 chmod 600 /home/cloudshell-user/functionland.pem
 # Define your regions
 regions=(
+    us-west-1
+    us-west-2
+    af-south-1
+    ap-east-1
+    ap-south-1
+    ap-south-2
+    ap-northeast-3
+    ap-northeast-2
+    ap-southeast-1
+    ap-southeast-2
     ap-northeast-1
     ca-central-1
     eu-central-1
@@ -45,6 +55,7 @@ process_region() {
         echo "Stack already exists in region $region"
         return
     fi
+    sleep 15
     echo "creating stack for region $region"
     # Create CloudFormation stack
     creation_output=$(aws cloudformation create-stack --stack-name FulaEC2Stack --template-body file:///home/cloudshell-user/aws.yaml --parameters ParameterKey=UbuntuAmiId,ParameterValue=$(aws ec2 describe-images --region $region --filters "Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*" "Name=state,Values=available" --query "Images | sort_by(@, &CreationDate) | [-1].ImageId" --output text) ParameterKey=SeedParameter,ParameterValue="$seed_parameter" --region $region --capabilities CAPABILITY_IAM 2>&1)
