@@ -2,8 +2,6 @@
 chmod 600 /home/cloudshell-user/functionland.pem
 # Define your regions
 regions=(
-    ap-southeast-1
-    ap-southeast-2
     ap-northeast-1
     ca-central-1
     eu-central-1
@@ -58,12 +56,13 @@ process_region() {
 
     if [[ $stack_status == "CREATE_COMPLETE"* ]]; then
         echo "Stack creation succeeded in region $region"
-
+        sleep 20
         # Retrieve the public IP of the instance
         instance_ip=$(aws ec2 describe-instances --region $region --query 'Reservations[].Instances[?State.Name==`running`].PublicIpAddress' --output text)
 
         if [ -n "$instance_ip" ]; then
             echo "Instance IP: $instance_ip"
+            sleep 10
             # SSH Command (This part needs to be run from a system where SSH is possible)
             ssh -o StrictHostKeyChecking=no -i /home/cloudshell-user/functionland.pem ubuntu@$instance_ip "nohup bash ~/automatic-poolnode-creation-script/pool_creation.sh $seed_parameter > ~/pool_creation_log.txt 2>&1 &" &
         else
@@ -82,8 +81,9 @@ process_region() {
 # Initial loop through each region
 for region in "${regions[@]}"; do
     process_region "$region"
+    sleep 10
 done
-sleep 30
+sleep 180
 
 # Retry failed regions
 for (( i=0; i<max_retries; i++ )); do
@@ -98,6 +98,7 @@ for (( i=0; i<max_retries; i++ )); do
 
     for region in "${current_failed[@]}"; do
         process_region "$region"
+        sleep 10
     done
 done
 
