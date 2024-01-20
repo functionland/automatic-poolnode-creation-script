@@ -48,7 +48,7 @@ process_region() {
         if [ -n "$instance_ip" ]; then
             echo "Instance IP: $instance_ip"
             # SSH Command (This part needs to be run from a system where SSH is possible)
-            echo "ssh -i /path/to/functionland.pem ubuntu@$instance_ip 'bash ~/automatic-poolnode-creation-script/pool_creation.sh $seed_parameter'"
+            echo "ssh -i /path/to/functionland.pem ubuntu@$instance_ip 'nohup bash ~/automatic-poolnode-creation-script/pool_creation.sh $seed_parameter > ~/pool_creation_log.txt 2>&1 &'"
         else
             echo "Failed to retrieve the instance IP address."
         fi
@@ -66,6 +66,7 @@ process_region() {
 for region in "${regions[@]}"; do
     process_region "$region"
 done
+sleep 30
 
 # Retry failed regions
 for (( i=0; i<max_retries; i++ )); do
