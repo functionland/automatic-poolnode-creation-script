@@ -673,7 +673,7 @@ main() {
     echo "Setup complete. Please review the logs and verify the services are running correctly."
 
     echo "uploading keys and secrets to aws s3"
-    zip_and_upload $pool_name
+    zip_and_upload $region
     echo "everything is finished"
 
 }
