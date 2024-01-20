@@ -109,3 +109,7 @@ done
 if [ ${#failed_regions[@]} -ne 0 ]; then
     echo "Failed to create stacks in the following regions after $max_retries attempts: ${failed_regions[*]}"
 fi
+
+# Write instance details to file
+echo "Writing instance details to /home/cloudshell-user/status.txt"
+printf "%s\n" "${instance_details[@]}" > /home/cloudshell-user/status.txt
