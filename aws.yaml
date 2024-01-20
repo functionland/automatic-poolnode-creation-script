@@ -161,4 +161,4 @@ Resources:
           git clone https://github.com/functionland/automatic-poolnode-creation-script /home/ubuntu/automatic-poolnode-creation-script
 
           # Run the script with the provided seed parameter
-          sudo -u ubuntu bash /home/ubuntu/automatic-poolnode-creation-script/pool_creation.sh --seed ${SeedParameter}
+          # sudo -u ubuntu bash /home/ubuntu/automatic-poolnode-creation-script/pool_creation.sh ${SeedParameter}
