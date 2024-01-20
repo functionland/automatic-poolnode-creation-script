@@ -42,7 +42,7 @@ process_region() {
         aws cloudformation delete-stack --stack-name FulaEC2Stack --region $region
         echo "Waiting for stack deletion to complete..."
         aws cloudformation wait stack-delete-complete --stack-name FulaEC2Stack --region $region
-    elif [[ $stack_existing_status != "None" ]]; then
+    elif [[ $stack_existing_status == "CREATE_COMPLETE" ]]; then
         echo "Stack already exists in region $region"
         return
     fi
