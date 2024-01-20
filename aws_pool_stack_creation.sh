@@ -25,6 +25,7 @@ max_retries=3
 
 # Array to keep track of failed regions
 declare -a failed_regions
+declare -a instance_details
 # Function to process region
 process_region() {
     local region=$1
@@ -61,12 +62,14 @@ process_region() {
         instance_ip=$(aws ec2 describe-instances --region $region --query 'Reservations[].Instances[?State.Name==`running`].PublicIpAddress' --output text)
 
         if [ -n "$instance_ip" ]; then
+            instance_details+=("$region, $instance_ip, SUCCESS")
             echo "Instance IP: $instance_ip"
             sleep 10
             # SSH Command (This part needs to be run from a system where SSH is possible)
             ssh -o StrictHostKeyChecking=no -i /home/cloudshell-user/functionland.pem ubuntu@$instance_ip "nohup bash ~/automatic-poolnode-creation-script/pool_creation.sh $seed_parameter > ~/pool_creation_log.txt 2>&1 &" &
         else
             echo "Failed to retrieve the instance IP address."
+            instance_details+=("$region, no IP, FAILED")
         fi
     elif [[ $stack_status == "ROLLBACK_COMPLETE" ]]; then
         echo "Stack creation failed in region $region, attempting to delete stack"
@@ -74,6 +77,7 @@ process_region() {
         aws cloudformation delete-stack --stack-name FulaEC2Stack --region $region
         echo "Waiting for stack deletion to complete..."
         aws cloudformation wait stack-delete-complete --stack-name FulaEC2Stack --region $region
+        instance_details+=("$region, $instance_ip, DELETED")
         failed_regions+=("$region")
     fi
 }
