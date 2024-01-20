@@ -65,7 +65,7 @@ process_region() {
         if [ -n "$instance_ip" ]; then
             echo "Instance IP: $instance_ip"
             # SSH Command (This part needs to be run from a system where SSH is possible)
-            echo "ssh -i /path/to/functionland.pem ubuntu@$instance_ip 'nohup bash ~/automatic-poolnode-creation-script/pool_creation.sh $seed_parameter > ~/pool_creation_log.txt 2>&1 &'"
+            echo "ssh -o StrictHostKeyChecking=no -i file:///home/cloudshell-user/functionland.pem ubuntu@$instance_ip 'nohup bash ~/automatic-poolnode-creation-script/pool_creation.sh $seed_parameter > ~/pool_creation_log.txt 2>&1 &'"
         else
             echo "Failed to retrieve the instance IP address."
         fi
