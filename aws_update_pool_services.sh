@@ -42,7 +42,7 @@ process_region() {
             cd /home/ubuntu/automatic-poolnode-creation-script
             git pull
             cd ..
-            bash /home/ubuntu/update_pools.sh
+            bash /home/ubuntu/automatic-poolnode-creation-script/update_pools.sh
         }
         update"
         # SSH Command (This part needs to be run from a system where SSH is possible)
