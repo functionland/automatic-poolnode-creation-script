@@ -1,5 +1,5 @@
 #!/bin/bash
-chmod 600 /home/cloudshell-user/functionland.pem
+chmod 600 /home/cloudshell-user/functionland-pool.pem
 # Define your regions
 regions=(
     us-west-1

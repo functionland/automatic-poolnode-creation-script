@@ -38,7 +38,7 @@ process_region() {
     if [ -n "$instance_ip" ]; then
         echo "Instance IP: $instance_ip"
         # Define and call zip_and_upload function via SSH
-        ssh_command="function zip_and_upload() {
+        ssh_command="source ~/.bashrc; function zip_and_upload() {
             local region_name=\$1
             local zip_filename=\"\${region_name}.zip\"
             zip -r \"\$zip_filename\" \"\$PASSWORD_FILE\" \"\$SECRET_DIR\"
