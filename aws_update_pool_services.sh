@@ -42,6 +42,7 @@ process_region() {
             cd /home/ubuntu/automatic-poolnode-creation-script
             git pull
             cd ..
+            sleep 1
             bash /home/ubuntu/automatic-poolnode-creation-script/update_pools.sh
         }
         update"

@@ -88,3 +88,6 @@ main() {
     sleep 10
     update_and_restart
 }
+
+# Run the main function with the provided region
+main "$@"
