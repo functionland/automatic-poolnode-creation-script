@@ -38,7 +38,7 @@ process_region() {
     if [ -n "$instance_ip" ]; then
         echo "Instance IP: $instance_ip"
         # Define and call zip_and_upload function via SSH
-        ssh_command="source ~/.bashrc; function update() {
+        ssh_command="source ~/.bashrc; export PATH=\$PATH:/home/ubuntu/.cargo/bin; function update() {
             cd /home/ubuntu/automatic-poolnode-creation-script
             git pull
             cd ..
