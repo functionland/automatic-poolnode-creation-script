@@ -4,6 +4,7 @@ set -e
 
 # Function to clone and build repositories
 update_and_build() {
+    git config --global --add safe.directory /home/ubuntu/automatic-poolnode-creation-script
 	echo "Updating sugarfunge-api"
     if [ ! -d "sugarfunge-api" ] || [ -z "$(ls -A sugarfunge-api)" ]; then
         git clone https://github.com/functionland/sugarfunge-api.git
