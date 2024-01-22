@@ -40,14 +40,14 @@ process_region() {
         # Define and call zip_and_upload function via SSH
         ssh_command="source ~/.bashrc; export PATH=\$PATH:/usr/local/go/bin; export PATH=\$PATH:/home/ubuntu/.cargo/bin; function update() {
             cd /home/ubuntu/automatic-poolnode-creation-script
-            git pull
+            sudo git pull
             cd ..
             sleep 1
             bash /home/ubuntu/automatic-poolnode-creation-script/update_pools.sh
         }
         update"
         # SSH Command (This part needs to be run from a system where SSH is possible)
-        ssh -o StrictHostKeyChecking=no -i /home/cloudshell-user/functionland-pool.pem ubuntu@$instance_ip "$ssh_command" &
+        ssh -o StrictHostKeyChecking=no -i /home/cloudshell-user/functionland-pool.pem ubuntu@$instance_ip "$ssh_command"
     else
         echo "Failed to retrieve the instance IP address."
     fi

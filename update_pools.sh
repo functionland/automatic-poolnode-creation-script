@@ -10,7 +10,7 @@ update_and_build() {
         git clone https://github.com/functionland/sugarfunge-api.git
     fi
     cd sugarfunge-api
-    git pull
+    sudo git pull
     cargo build --release
     cd ..
 	
@@ -19,7 +19,7 @@ update_and_build() {
         git clone https://github.com/functionland/sugarfunge-node.git
     fi
     cd sugarfunge-node
-    git pull
+    sudo git pull
     cargo build --release
     cd ..
 
@@ -28,7 +28,7 @@ update_and_build() {
         git clone https://github.com/functionland/go-fula.git
     fi
     cd go-fula
-    git pull
+    sudo git pull
     go build -o go-fula ./cmd/blox
     cd ..
 }
