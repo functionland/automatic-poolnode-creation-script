@@ -47,7 +47,7 @@ process_region() {
         }
         update"
         # SSH Command (This part needs to be run from a system where SSH is possible)
-        ssh -o StrictHostKeyChecking=no -i /home/cloudshell-user/functionland.pem ubuntu@$instance_ip "$ssh_command" &
+        ssh -o StrictHostKeyChecking=no -i /home/cloudshell-user/functionland-pool.pem ubuntu@$instance_ip "$ssh_command" &
     else
         echo "Failed to retrieve the instance IP address."
     fi
