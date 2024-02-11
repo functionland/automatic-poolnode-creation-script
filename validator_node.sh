@@ -160,7 +160,7 @@ setup_node_service() {
 
     # Construct the ExecStart command
     NODE_KEY=$(cat "$SECRET_DIR/node_key.txt")
-    EXEC_START="/usr/bin/docker run -u root --rm --name MyNode$VALIDATOR_NO --network host -v $SECRET_DIR/password.txt:/password.txt -v $KEYS_DIR:/keys -v $DATA_DIR:/data functionland/sugarfunge-node:amd64-latest --chain /customSpecRaw.json --enable-offchain-indexing true --base-path=/data --keystore-path=/keys --port=$PORT --rpc-port $RPC_PORT --rpc-cors=all --rpc-methods=Unsafe --rpc-external --validator --name Node$VALIDATOR_NO --password-filename=\"/password.txt\" --node-key=$NODE_KEY"
+    EXEC_START="/usr/bin/docker run -u root --rm --name MyNode$VALIDATOR_NO --network host -v $SECRET_DIR/password.txt:/password.txt -v $KEYS_DIR:/keys -v $DATA_DIR:/data functionland/sugarfunge-node:amd64-latest --chain /customSpecRaw.json --enable-offchain-indexing true --base-path=/data --keystore-path=/keys --port=$PORT --rpc-port $RPC_PORT --rpc-cors=all --rpc-methods=Unsafe --rpc-external --validator --name Node$VALIDATOR_NO --password-filename=\"/password.txt\" --node-key=$NODE_KEY --pruning archive" 
 
     # Add bootnodes parameter if provided
     if [ ! -z "$BOOTSTRAP_NODE" ]; then
