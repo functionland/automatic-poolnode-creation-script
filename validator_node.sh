@@ -183,8 +183,8 @@ Restart=always
 RestartSec=10s
 StartLimitInterval=5min
 StartLimitBurst=4
-StandardOutput=file:"$LOG_DIR/Node$VALIDATOR_NO.log"
-StandardError=file:"$LOG_DIR/Node$VALIDATOR_NO.err"
+StandardOutput=file:${LOG_DIR}/Node${VALIDATOR_NO}.log
+StandardError=file:${LOG_DIR}/Node${VALIDATOR_NO}.err
 
 [Install]
 WantedBy=multi-user.target
