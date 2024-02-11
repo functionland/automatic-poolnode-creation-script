@@ -181,6 +181,26 @@ git clone https://github.com/functionland/automatic-poolnode-creation-script
 bash ~/automatic-poolnode-creation-script/pool_creation.sh 0x1222222
 ```
 
+## (Easy Way for the last!) Using aws scripts
+
+The easiest way is to use the aws scripts. 
+
+### Validator Nodes
+
+For validator nodes, you can open an aws terminal and run the below and it installs 2 validator nodes on the same instance. IT downloads keys01.info, keys02.info and other required info from S3 and downloads the latest yaml for cloudformation from GitHub.
+```
+git clone https://github.com/functionland/automatic-poolnode-creation-script && cd automatic-poolnode-creation-script && git pull
+
+bash  ./aws_validator_creation.sh --eip_allocation_id='eipalloc-xxxxxxxxxxx (this group contains the public IP of validator1)' --validator_password01='validator1 password' --validator_password02='validator2 password'
+```
+
+### Non-Validator Node
+
+For non-validator node, you can run the below command and it installs one non-validator node on an instance and uploads the keys to the S3
+```
+
+```
+
 ## Troubleshooting
 - Permission Issues: Run the script with sufficient privileges (sudo may be necessary).
 - Docker Problems: Verify Docker's installation and operational status (systemctl status docker).
