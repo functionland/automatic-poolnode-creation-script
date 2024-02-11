@@ -31,10 +31,10 @@ Resources:
       Statistic: Maximum
       Period: 300
       EvaluationPeriods: 1
-      Threshold: 0
-      ComparisonOperator: GreaterThanThreshold
+      Threshold: 1
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
       AlarmActions:
-        - "arn:aws:recover:${AWS::Region}:ec2:recover" # Use 'recover' to automatically recover or reboot the instance
+        - !Sub "arn:aws:automate:${AWS::Region}:ec2:recover"
   MyTopic:
     Type: AWS::SNS::Topic
     Properties:
