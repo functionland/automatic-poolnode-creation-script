@@ -259,6 +259,10 @@ Resources:
 
                 # Run the script for validator 01
                 sudo -u ubuntu bash /home/ubuntu/automatic-poolnode-creation-script/validator_node.sh --user=ubuntu --password=${ValidatorPassword01} --validator=01 --domain=${Domain01}
+                PID=$!
+                wait $PID
+                echo "Validator node01 is completed"
+                sleep 900
 
                 # Run the script for validator 02
                 sudo -u ubuntu bash /home/ubuntu/automatic-poolnode-creation-script/validator_node.sh --user=ubuntu --password=${ValidatorPassword02} --validator=02 --bootnodes=${Bootnodes}
