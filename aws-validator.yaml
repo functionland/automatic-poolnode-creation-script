@@ -201,11 +201,6 @@ Resources:
       UserData:
           Fn::Base64: !Sub |
                 #!/bin/bash
-                # Set variables for script parameters
-                PASSWORD_PARAMETER="{parameter01}"
-                DOMAIN_PARAMETER="{domainParameterFor01}"
-                BOOTNODES_PARAMETER="{bootnodesParameterFor02}"
-
                 # Wait for the attached volume to become available
                 while ! sudo lsblk | grep -q nvme1n1; do
                   sleep 1
