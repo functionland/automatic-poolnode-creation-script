@@ -34,7 +34,7 @@ Resources:
       Threshold: 0
       ComparisonOperator: GreaterThanThreshold
       AlarmActions:
-        - "arn:aws:automate:${AWS::Region}:ec2:recover" # Use 'recover' to automatically recover or reboot the instance
+        - "arn:aws:recover:${AWS::Region}:ec2:recover" # Use 'recover' to automatically recover or reboot the instance
   MyTopic:
     Type: AWS::SNS::Topic
     Properties:
