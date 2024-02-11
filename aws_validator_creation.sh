@@ -72,7 +72,7 @@ else
         ParameterKey=ValidatorPassword02,ParameterValue="$validator_password02" \
         ParameterKey=Domain01,ParameterValue="$domain01" \
         ParameterKey=Bootnodes,ParameterValue="$bootnodes" \
-        --parameters ParameterKey=AvailabilityZone,ParameterValue=$availabilityZone \
+        ParameterKey=AvailabilityZone,ParameterValue=$availabilityZone \
         --region $region --capabilities CAPABILITY_IAM
     aws cloudformation wait stack-create-complete --stack-name ValidatorEC2Stack --region $region
     echo "Stack creation completed in region $region."
