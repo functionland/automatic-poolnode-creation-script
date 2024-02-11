@@ -22,17 +22,17 @@ Resources:
   InstanceReachabilityAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmDescription: "Reboot instance upon reachability failure"
+      AlarmDescription: "Recover instance upon system status check failure"
       Namespace: AWS/EC2
-      MetricName: StatusCheckFailed_Instance
+      MetricName: StatusCheckFailed_System
       Dimensions:
         - Name: InstanceId
           Value: !Ref ValidatorEC2Instance
       Statistic: Maximum
-      Period: 300
-      EvaluationPeriods: 1
+      Period: 60
+      EvaluationPeriods: 2
       Threshold: 1
-      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      ComparisonOperator: GreaterThanOrEqualToThreshold
       AlarmActions:
         - !Sub "arn:aws:automate:${AWS::Region}:ec2:recover"
   MyTopic:
