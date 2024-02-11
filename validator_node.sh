@@ -84,7 +84,7 @@ PORT=$(calculate_port)
 KEYS_INFO_PATH="/home/$USER/keys$VALIDATOR_NO.info"
 BASE_DIR="/home/$USER/.sugarfunge-node"
 SECRET_DIR="$BASE_DIR/passwords$VALIDATOR_NO"
-DATA_DIR="$BASE_DIR/data/node$VALIDATOR_NO"
+DATA_DIR="/uniondrive/data$VALIDATOR_NO"
 KEYS_DIR="$BASE_DIR/keys/node$VALIDATOR_NO"
 LOG_DIR="/var/log"
 

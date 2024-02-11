@@ -161,7 +161,7 @@ Example
 
 Run the below command in aws, replacing the ap-south-2 with the region you want:
 ```
-REGION=ap-south-2; aws ec2 import-key-pair --key-name functionland --public-key-material file:///home/cloudshell-user/functionland-public.b64 --region $REGION; aws cloudformation create-stack --stack-name FulaEC2Stack --template-body file:///home/cloudshell-user/aws.yaml --parameters ParameterKey=UbuntuAmiId,ParameterValue=$(aws ec2 describe-images --region $REGION --filters "Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*" "Name=state,Values=available" --query "Images | sort_by(@, &CreationDate) | [-1].ImageId" --output text) --region $REGION;
+REGION=ap-south-2; aws ec2 import-key-pair --key-name functionland --public-key-material file:///home/cloudshell-user/functionland-public.b64 --region $REGION; aws cloudformation create-stack --stack-name FulaEC2Stack --template-body file:///home/cloudshell-user/aws-pools.yaml --parameters ParameterKey=UbuntuAmiId,ParameterValue=$(aws ec2 describe-images --region $REGION --filters "Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*" "Name=state,Values=available" --query "Images | sort_by(@, &CreationDate) | [-1].ImageId" --output text) --region $REGION;
 ```
 Where `functionland-public.b64` is the file for which the content is the base64 encoded version of the content of your private key to access the instance.
 

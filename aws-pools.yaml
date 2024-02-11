@@ -157,6 +157,13 @@ Resources:
           # Add an entry to /etc/fstab to auto-mount the volume on reboot
           echo "/dev/nvme1n1 /uniondrive ext4 defaults,nofail 0 2" | sudo tee -a /etc/fstab
 
+          # Update and install NTP
+          sudo apt-get update
+          sudo apt-get install -y ntp
+
+          # Once NTP is installed, query the NTP servers
+          sudo ntpq -p
+
           # Clone the repository
           git clone https://github.com/functionland/automatic-poolnode-creation-script /home/ubuntu/automatic-poolnode-creation-script
 

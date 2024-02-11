@@ -58,7 +58,7 @@ process_region() {
     sleep 15
     echo "creating stack for region $region"
     # Create CloudFormation stack
-    creation_output=$(aws cloudformation create-stack --stack-name FulaEC2Stack --template-body file:///home/cloudshell-user/aws.yaml --parameters ParameterKey=UbuntuAmiId,ParameterValue=$(aws ec2 describe-images --region $region --filters "Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*" "Name=state,Values=available" --query "Images | sort_by(@, &CreationDate) | [-1].ImageId" --output text) ParameterKey=SeedParameter,ParameterValue="$seed_parameter" --region $region --capabilities CAPABILITY_IAM 2>&1)
+    creation_output=$(aws cloudformation create-stack --stack-name FulaEC2Stack --template-body file:///home/cloudshell-user/aws-pools.yaml --parameters ParameterKey=UbuntuAmiId,ParameterValue=$(aws ec2 describe-images --region $region --filters "Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*" "Name=state,Values=available" --query "Images | sort_by(@, &CreationDate) | [-1].ImageId" --output text) ParameterKey=SeedParameter,ParameterValue="$seed_parameter" --region $region --capabilities CAPABILITY_IAM 2>&1)
     # Wait for stack creation to complete
     echo "waitting for creation of stack for region $region"
     aws cloudformation wait stack-create-complete --stack-name FulaEC2Stack --region $region

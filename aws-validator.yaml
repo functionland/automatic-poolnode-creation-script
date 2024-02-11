@@ -1,0 +1,248 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation template for creating an EC2 instance for validator node with S3 access and Elastic IP.
+
+Parameters:
+  UbuntuAmiId:
+    Type: String
+    Description: The AMI ID for the Ubuntu instance
+  ValidatorPassword01:
+    Type: String
+    Description: Password parameter for validator node01 script
+  ValidatorPassword02:
+    Type: String
+    Description: Password parameter for validator node02 script
+  Domain01:
+    Type: String
+    Description: Domain parameter for validator 01
+  Bootnodes:
+    Type: String
+    Description: Bootnodes parameter for validator 02
+
+Resources:
+  InstanceReachabilityAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: "Reboot instance upon reachability failure"
+      Namespace: AWS/EC2
+      MetricName: StatusCheckFailed_Instance
+      Dimensions:
+        - Name: InstanceId
+          Value: !Ref ValidatorEC2Instance
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - "arn:aws:automate:${AWS::Region}:ec2:recover" # Use 'recover' to automatically recover or reboot the instance
+  MyTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+        - Endpoint: hi@fx.land
+          Protocol: email
+
+  HighCPUAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: "Alarm when CPU exceeds 70%"
+      MetricName: CPUUtilization
+      Namespace: AWS/EC2
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 70
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - Ref: MyTopic
+      Dimensions:
+        - Name: InstanceId
+          Value: !Ref ValidatorEC2Instance
+
+  ValidatorInternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  ValidatorVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+
+  ValidatorRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref ValidatorVPC
+
+  ValidatorVPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref ValidatorVPC
+      InternetGatewayId: !Ref ValidatorInternetGateway
+
+  ValidatorRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref ValidatorRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref ValidatorInternetGateway
+
+  ValidatorSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref ValidatorSubnet
+      RouteTableId: !Ref ValidatorRouteTable
+
+  ValidatorSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref ValidatorVPC
+      CidrBlock: 10.0.0.0/24
+
+  ValidatorSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupName: validator-node
+      GroupDescription: Security Group for Validator Node
+      VpcId: !Ref ValidatorVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '30334'
+          ToPort: '30334'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '30335'
+          ToPort: '30335'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '443'
+          ToPort: '443'
+          CidrIp: 0.0.0.0/0
+
+  ValidatorEIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      InstanceId: !Ref ValidatorEC2Instance
+
+  ValidatorInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ValidatorInstancePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource: 'arn:aws:s3:::validator-pools/*'
+
+  ValidatorInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref ValidatorInstanceRole
+
+  ValidatorEC2Instance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: m5.2xlarge
+      IamInstanceProfile: !Ref ValidatorInstanceProfile
+      ImageId: !Ref UbuntuAmiId
+      KeyName: functionland
+      Tags:
+        - Key: Name
+          Value: validator-node
+        - Key: Group
+          Value: validators
+      NetworkInterfaces:
+        - DeviceIndex: '0'
+          AssociatePublicIpAddress: true
+          SubnetId: !Ref ValidatorSubnet
+          GroupSet:
+            - !Ref ValidatorSecurityGroup
+      UserData:
+          Fn::Base64: !Sub |
+                #!/bin/bash
+                # Set variables for script parameters
+                PASSWORD_PARAMETER="{parameter01}"
+                DOMAIN_PARAMETER="{domainParameterFor01}"
+                BOOTNODES_PARAMETER="{bootnodesParameterFor02}"
+
+                # Wait for the attached volume to become available
+                while ! sudo lsblk | grep -q nvme1n1; do
+                  sleep 1
+                done
+                echo "EBS volume is attached"
+
+                # Create a filesystem on the volume (if it's new)
+                sudo mkfs -t ext4 /dev/nvme1n1 
+
+                # Create the mount point directory
+                sudo mkdir -p /uniondrive
+
+                # Mount the volume
+                sudo mount /dev/nvme1n1 /uniondrive
+                sudo chown ubuntu:ubuntu /uniondrive
+                sudo chmod 777 -R /uniondrive
+                # Add an entry to /etc/fstab to auto-mount the volume on reboot
+                echo "/dev/nvme1n1 /uniondrive ext4 defaults,nofail 0 2" | sudo tee -a /etc/fstab
+
+                # Update and install NTP
+                sudo apt-get update
+                sudo apt-get install -y ntp awscli
+
+                # Once NTP is installed, query the NTP servers
+                sudo ntpq -p
+
+                # Download keys info files from S3
+                aws s3 cp s3://fula-validator/keys01.info /home/ubuntu/keys01.info
+                aws s3 cp s3://fula-validator/keys02.info /home/ubuntu/keys02.info
+
+                # Ensure correct ownership and permissions
+                chown ubuntu:ubuntu /home/ubuntu/keys01.info
+                chown ubuntu:ubuntu /home/ubuntu/keys02.info
+                chmod 600 /home/ubuntu/keys01.info
+                chmod 600 /home/ubuntu/keys02.info
+
+                # Script to check docker logs and send email
+                cat << 'EOF' > /home/ubuntu/check_docker_logs.sh
+                #!/bin/bash
+                logs=$(sudo docker logs MyNode01 --tail 5)
+                best=$(echo "$logs" | grep -oP '(?<=best: #)\d+')
+                finalized=$(echo "$logs" | grep -oP '(?<=finalized #)\d+')
+                if (( best - finalized > 20 )); then
+                  aws sns publish --topic-arn "${MyTopic}" --message "Best is greater than finalized by more than 20. Best: $best, Finalized: $finalized"
+                fi
+                EOF
+
+                chmod +x /home/ubuntu/check_docker_logs.sh
+
+                # Setup cron job to run the script every hour
+                (crontab -l 2>/dev/null; echo "0 * * * * /home/ubuntu/check_docker_logs.sh") | crontab -
+
+                # Clone the repository
+                git clone https://github.com/your-validator-repo/validator-node-creation-script /home/ubuntu/validator-node-creation-script
+
+                # Run the script for validator 01
+                sudo -u ubuntu bash /home/ubuntu/validator-node-creation-script/validator_node.sh --user=ubuntu --password=${ValidatorPassword01} --validator=01 --domain=${Domain01}
+
+                # Run the script for validator 02
+                sudo -u ubuntu bash /home/ubuntu/validator-node-creation-script/validator_node.sh --user=ubuntu --password=${ValidatorPassword02} --validator=02 --bootnodes=${Bootnodes}
