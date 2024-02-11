@@ -140,8 +140,8 @@ insert_keys() {
     suri=$(cat "${SECRET_DIR}/secret_phrase.txt" | tr -d '\r\n')
     password=$(cat "${SECRET_DIR}/password.txt" | tr -d '\r\n')
 
-    /home/$USER/sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --keystore-path="$KEYS_DIR" --chain "$HOME/sugarfunge-node/customSpecRaw.json" --scheme Sr25519 --suri "$suri" --password "$password" --key-type aura
-    /home/$USER/sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --keystore-path="$KEYS_DIR" --chain "$HOME/sugarfunge-node/customSpecRaw.json" --scheme Ed25519 --suri "$suri" --password "$password" --key-type gran
+    /home/$USER/sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --keystore-path="$KEYS_DIR" --chain "/home/${USER}/sugarfunge-node/customSpecRaw.json" --scheme Sr25519 --suri "$suri" --password "$password" --key-type aura
+    /home/$USER/sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --keystore-path="$KEYS_DIR" --chain "/home/${USER}/sugarfunge-node/customSpecRaw.json" --scheme Ed25519 --suri "$suri" --password "$password" --key-type gran
 }
 
 # Function to setup and start node service (modify the existing function)
@@ -350,11 +350,11 @@ install_rust() {
 clone_and_build() {
 	echo "Installing sugarfunge-node"
     if [ ! -d "sugarfunge-node" ] || [ -z "$(ls -A sugarfunge-node)" ]; then
-        sudo git clone https://github.com/functionland/sugarfunge-node.git
+        sudo git clone https://github.com/functionland/sugarfunge-node.git /home/${USER}/sugarfunge-node
     fi
-    sudo chown -R ubuntu:ubuntu sugarfunge-node
-    sudo chmod -R 777 sugarfunge-node
-    cd sugarfunge-node
+    sudo chown -R ubuntu:ubuntu /home/${USER}/sugarfunge-node
+    sudo chmod -R 777 /home/${USER}/sugarfunge-node
+    cd /home/${USER}/sugarfunge-node
     cargo build --release
     cd ..
 }
