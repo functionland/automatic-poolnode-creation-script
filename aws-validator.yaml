@@ -17,6 +17,10 @@ Parameters:
   Bootnodes:
     Type: String
     Description: Bootnodes parameter for validator 02
+  AvailabilityZone:
+    Type: String
+    Description: The Availability Zone where resources will be created.
+
 
 Resources:
   InstanceReachabilityAlarm:
@@ -181,6 +185,8 @@ Resources:
       IamInstanceProfile: !Ref ValidatorInstanceProfile
       ImageId: !Ref UbuntuAmiId
       KeyName: functionland
+      AvailabilityZone:
+        Ref: AvailabilityZone
       Tags:
         - Key: Name
           Value: validator-node
