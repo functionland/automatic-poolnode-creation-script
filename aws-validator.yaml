@@ -126,6 +126,20 @@ Resources:
           FromPort: '443'
           ToPort: '443'
           CidrIp: 0.0.0.0/0
+  FulaVolume:
+    Type: AWS::EC2::Volume
+    Properties:
+      Size: 2500
+      AvailabilityZone: !GetAtt ValidatorEC2Instance.AvailabilityZone
+      VolumeType: gp2
+      Encrypted: false # Change based on your requirement
+
+  FulaVolumeAttachment:
+    Type: AWS::EC2::VolumeAttachment
+    Properties:
+      InstanceId: !Ref ValidatorEC2Instance
+      VolumeId: !Ref FulaVolume
+      Device: /dev/sdh
 
   ValidatorEIP:
     Type: AWS::EC2::EIP
