@@ -7,7 +7,7 @@ validator_password02=""
 
 # Define target region
 region="us-east-1"
-availabilityZone="us-east-1a"
+availabilityZone="us-east-1c"
 bucket_name="fula-validator" # Change this to your actual S3 bucket name
 pem_key_path="s3://${bucket_name}/functionland.pem"
 public_key_path="s3://${bucket_name}/functionland-public.b64"
