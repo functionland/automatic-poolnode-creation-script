@@ -328,6 +328,8 @@ clone_and_build() {
     if [ ! -d "sugarfunge-node" ] || [ -z "$(ls -A sugarfunge-node)" ]; then
         sudo git clone https://github.com/functionland/sugarfunge-node.git
     fi
+    sudo chown -R ubuntu:ubuntu sugarfunge-node
+    sudo chmod -R 777 sugarfunge-node
     cd sugarfunge-node
     cargo build --release
     cd ..
