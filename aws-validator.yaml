@@ -166,7 +166,7 @@ Resources:
                 Action:
                   - s3:GetObject
                   - s3:PutObject
-                Resource: 'arn:aws:s3:::validator-pools/*'
+                Resource: 'arn:aws:s3:::fula-validator/*'
 
   ValidatorInstanceProfile:
     Type: AWS::IAM::InstanceProfile
@@ -253,10 +253,10 @@ Resources:
                 (crontab -l 2>/dev/null; echo "0 * * * * /home/ubuntu/check_docker_logs.sh") | crontab -
 
                 # Clone the repository
-                git clone https://github.com/your-validator-repo/validator-node-creation-script /home/ubuntu/validator-node-creation-script
+                git clone https://github.com/functionland/automatic-poolnode-creation-script /home/ubuntu/
 
                 # Run the script for validator 01
-                sudo -u ubuntu bash /home/ubuntu/validator-node-creation-script/validator_node.sh --user=ubuntu --password=${ValidatorPassword01} --validator=01 --domain=${Domain01}
+                sudo -u ubuntu bash /home/ubuntu/automatic-poolnode-creation-script/validator_node.sh --user=ubuntu --password=${ValidatorPassword01} --validator=01 --domain=${Domain01}
 
                 # Run the script for validator 02
-                sudo -u ubuntu bash /home/ubuntu/validator-node-creation-script/validator_node.sh --user=ubuntu --password=${ValidatorPassword02} --validator=02 --bootnodes=${Bootnodes}
+                sudo -u ubuntu bash /home/ubuntu/automatic-poolnode-creation-script/validator_node.sh --user=ubuntu --password=${ValidatorPassword02} --validator=02 --bootnodes=${Bootnodes}
