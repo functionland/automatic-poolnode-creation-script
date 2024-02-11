@@ -326,7 +326,7 @@ install_rust() {
 clone_and_build() {
 	echo "Installing sugarfunge-node"
     if [ ! -d "sugarfunge-node" ] || [ -z "$(ls -A sugarfunge-node)" ]; then
-        git clone https://github.com/functionland/sugarfunge-node.git
+        sudo git clone https://github.com/functionland/sugarfunge-node.git
     fi
     cd sugarfunge-node
     cargo build --release
