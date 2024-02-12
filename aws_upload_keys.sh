@@ -1,4 +1,9 @@
 #!/bin/bash
+bucket_name="fula-validator" # Change this to your actual S3 bucket name
+pem_key_path="s3://${bucket_name}/functionland.pem"
+# Download key pair from S3
+aws s3 cp "$pem_key_path" /home/cloudshell-user/functionland.pem
+
 chmod 600 /home/cloudshell-user/functionland.pem
 # Define your regions
 regions=(

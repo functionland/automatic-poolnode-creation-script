@@ -181,9 +181,9 @@ git clone https://github.com/functionland/automatic-poolnode-creation-script
 bash ~/automatic-poolnode-creation-script/pool_creation.sh 0x1222222
 ```
 
-## (Easy Way for the last!) Using aws scripts
+## AWS Setup and install
 
-The easiest way is to use the aws scripts. 
+The easiest way is to use the aws scripts which handles everything from instance setup to install. 
 
 ### Validator Nodes
 
@@ -201,6 +201,23 @@ For non-validator node, you can run the below command and it installs one non-va
 git clone https://github.com/functionland/automatic-poolnode-creation-script && cd automatic-poolnode-creation-script && git pull
 
 bash ./aws_nonvalidator_creation.sh --eip_allocation_id='eipalloc-xxxxxxxxxxx (this group contains the public IP of nonvalidator)' --password='nonvalidator password'
+```
+
+### Pools
+
+For creating pools for the regions where there is an AWS server (it has a list in the script that iterates through it), you cna run the below command:
+
+```
+git clone https://github.com/functionland/automatic-poolnode-creation-script && cd automatic-poolnode-creation-script && git pull
+
+bash ./aws_pool_stack_creation.sh 0x1222222(seed of validator node)
+```
+
+Then after all pools are created which takes some time, and to upload the created keys and passwords, you can run:
+```
+git clone https://github.com/functionland/automatic-poolnode-creation-script && cd automatic-poolnode-creation-script && git pull
+
+bash ./aws_upload_keys.sh
 ```
 
 ## Troubleshooting
