@@ -158,8 +158,8 @@ insert_keys() {
     SECRET_PHRASE=$(cat "$SECRET_DIR/secret_phrase.txt")
 
     # Insert the keys
-    /home/$USER/sugarfunge-node/target/$ENVIRONMENT/sugarfunge-node key insert --base-path="$DATA_DIR" --keystore-path="$KEYS_DIR" --chain "$HOME/sugarfunge-node/customSpecRaw.json" --scheme Sr25519 --suri "$SECRET_PHRASE" --password "$(cat "$SECRET_DIR/password.txt")" --key-type aura
-    /home/$USER/sugarfunge-node/target/$ENVIRONMENT/sugarfunge-node key insert --base-path="$DATA_DIR" --keystore-path="$KEYS_DIR" --chain "$HOME/sugarfunge-node/customSpecRaw.json" --scheme Ed25519 --suri "$SECRET_PHRASE" --password "$(cat "$SECRET_DIR/password.txt")" --key-type gran
+    /home/$USER/sugarfunge-node/target/$ENVIRONMENT/sugarfunge-node key insert --base-path="$DATA_DIR" --keystore-path="$KEYS_DIR" --chain "/home/$USER/sugarfunge-node/customSpecRaw.json" --scheme Sr25519 --suri "$SECRET_PHRASE" --password "$(cat "$SECRET_DIR/password.txt")" --key-type aura
+    /home/$USER/sugarfunge-node/target/$ENVIRONMENT/sugarfunge-node key insert --base-path="$DATA_DIR" --keystore-path="$KEYS_DIR" --chain "/home/$USER/sugarfunge-node/customSpecRaw.json" --scheme Ed25519 --suri "$SECRET_PHRASE" --password "$(cat "$SECRET_DIR/password.txt")" --key-type gran
 }
 
 # Function to setup and start node service
@@ -220,7 +220,7 @@ setup_api_service() {
     echo "Setting up API service at $api_service_file_path"
     local USER_API
     USER_API=$USER
-    sudo cp $HOME/sugarfunge-api/.env.example $HOME/sugarfunge-api/.env
+    sudo cp /home/$USER/sugarfunge-api/.env.example /home/$USER/sugarfunge-api/.env
     if [ -z "$RELEASE_FLAG" ]; then
         # Debug mode service configuration
         EXEC_START="/home/$USER/sugarfunge-api/target/debug/sugarfunge-api --db-uri=/data --node-server ws://127.0.0.1:$RPC_PORT"
@@ -249,7 +249,7 @@ setup_api_service() {
 -e CHALLENGE_TOKEN_VALUE=1 \
 -e CLAIMED_TOKEN_CLASS_ID=120 \
 -e CLAIMED_TOKEN_ASSET_ID=100 \
--v $HOME/sugarfunge-api/.env:/.env \
+-v /home/$USER/sugarfunge-api/.env:/.env \
 -v $DATA_DIR:/data \
 functionland/sugarfunge-api:amd64-latest --db-uri=/data --node-server ws://127.0.0.1:$RPC_PORT"
         USER_API="root"
@@ -454,10 +454,10 @@ install_go() {
 # Function to clone and build repositories
 clone_and_build_node() {
 	echo "Installing sugarfunge-node"
-    if [ ! -d "sugarfunge-node" ] || [ -z "$(ls -A sugarfunge-node)" ]; then
-        git clone https://github.com/functionland/sugarfunge-node.git
+    if [ ! -d "/home/${USER}/sugarfunge-node" ] || [ -z "$(ls -A /home/${USER}/sugarfunge-node)" ]; then
+        sudo git clone https://github.com/functionland/sugarfunge-node.git /home/${USER}/sugarfunge-node
     fi
-    cd sugarfunge-node
+    cd /home/${USER}/sugarfunge-node
     if [ ! -z "$RELEASE_FLAG" ]; then
         cargo build --release
     else
@@ -469,10 +469,10 @@ clone_and_build_node() {
 # Function to clone and build repositories
 clone_and_build_fula() {
 	echo "Installing go-fula"
-    if [ ! -d "go-fula" ] || [ -z "$(ls -A go-fula)" ]; then
-        git clone https://github.com/functionland/go-fula.git
+    if [ ! -d "/home/${USER}/go-fula" ] || [ -z "$(ls -A /home/${USER}/go-fula)" ]; then
+        sudo git clone https://github.com/functionland/go-fula.git /home/${USER}/go-fula
     fi
-    cd go-fula
+    cd /home/${USER}/go-fula
     go build -o go-fula ./cmd/blox
     cd ..
 }
@@ -480,10 +480,10 @@ clone_and_build_fula() {
 # Function to clone and build repositories
 clone_and_build_proof_engine() {
 	echo "Installing proof engine"
-    if [ ! -d "proof-engine" ] || [ -z "$(ls -A proof-engine)" ]; then
-        git clone https://github.com/functionland/proof-engine.git
+    if [ ! -d "/home/${USER}/proof-engine" ] || [ -z "$(ls -A /home/${USER}/proof-engine)" ]; then
+        sudo git clone https://github.com/functionland/proof-engine.git /home/${USER}/proof-engine
     fi
-    cd proof-engine
+    cd /home/${USER}/proof-engine
     if [ ! -z "$RELEASE_FLAG" ]; then
         cargo build --release --features headless
     else
@@ -495,10 +495,10 @@ clone_and_build_proof_engine() {
 # Function to clone and build repositories
 clone_and_build_api() {
 	echo "Installing sugarfunge-api"
-    if [ ! -d "sugarfunge-api" ] || [ -z "$(ls -A sugarfunge-api)" ]; then
-        git clone https://github.com/functionland/sugarfunge-api.git
+    if [ ! -d "/home/${USER}/sugarfunge-api" ] || [ -z "$(ls -A /home/${USER}/sugarfunge-api)" ]; then
+        git clone https://github.com/functionland/sugarfunge-api.git /home/${USER}/sugarfunge-api
     fi
-    cd sugarfunge-api
+    cd /home/${USER}/sugarfunge-api
     if [ ! -z "$RELEASE_FLAG" ]; then
         cargo build --release
     else
