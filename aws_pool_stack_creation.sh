@@ -8,7 +8,7 @@ aws s3 cp "$pem_key_path" /home/cloudshell-user/functionland.pem
 aws s3 cp "$public_key_path" /home/cloudshell-user/functionland-public.b64
 
 # Download the CloudFormation YAML file
-curl -o /home/cloudshell-user/aws-nonvalidator.yaml "$cloudformation_yaml_path"
+curl -o /home/cloudshell-user/aws-pools.yaml "$cloudformation_yaml_path"
 
 # Set permissions for the key file
 chmod 600 /home/cloudshell-user/functionland.pem
