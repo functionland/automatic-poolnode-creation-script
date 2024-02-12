@@ -86,6 +86,7 @@ Resources:
 
   ValidatorRoute:
     Type: AWS::EC2::Route
+    DependsOn: ValidatorVPCGatewayAttachment
     Properties:
       RouteTableId: !Ref ValidatorRouteTable
       DestinationCidrBlock: 0.0.0.0/0
