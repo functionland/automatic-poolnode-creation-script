@@ -457,6 +457,8 @@ clone_and_build_node() {
     if [ ! -d "/home/${USER}/sugarfunge-node" ] || [ -z "$(ls -A /home/${USER}/sugarfunge-node)" ]; then
         sudo git clone https://github.com/functionland/sugarfunge-node.git /home/${USER}/sugarfunge-node
     fi
+    sudo chown -R ubuntu:ubuntu /home/${USER}/sugarfunge-node
+    sudo chmod -R 777 /home/${USER}/sugarfunge-node
     cd /home/${USER}/sugarfunge-node
     if [ ! -z "$RELEASE_FLAG" ]; then
         cargo build --release
@@ -472,6 +474,8 @@ clone_and_build_fula() {
     if [ ! -d "/home/${USER}/go-fula" ] || [ -z "$(ls -A /home/${USER}/go-fula)" ]; then
         sudo git clone https://github.com/functionland/go-fula.git /home/${USER}/go-fula
     fi
+    sudo chown -R ubuntu:ubuntu /home/${USER}/go-fula
+    sudo chmod -R 777 /home/${USER}/go-fula
     cd /home/${USER}/go-fula
     go build -o go-fula ./cmd/blox
     cd ..
@@ -483,6 +487,8 @@ clone_and_build_proof_engine() {
     if [ ! -d "/home/${USER}/proof-engine" ] || [ -z "$(ls -A /home/${USER}/proof-engine)" ]; then
         sudo git clone https://github.com/functionland/proof-engine.git /home/${USER}/proof-engine
     fi
+    sudo chown -R ubuntu:ubuntu /home/${USER}/proof-engine
+    sudo chmod -R 777 /home/${USER}/proof-engine
     cd /home/${USER}/proof-engine
     if [ ! -z "$RELEASE_FLAG" ]; then
         cargo build --release --features headless
@@ -498,6 +504,8 @@ clone_and_build_api() {
     if [ ! -d "/home/${USER}/sugarfunge-api" ] || [ -z "$(ls -A /home/${USER}/sugarfunge-api)" ]; then
         git clone https://github.com/functionland/sugarfunge-api.git /home/${USER}/sugarfunge-api
     fi
+    sudo chown -R ubuntu:ubuntu /home/${USER}/sugarfunge-api
+    sudo chmod -R 777 /home/${USER}/sugarfunge-api
     cd /home/${USER}/sugarfunge-api
     if [ ! -z "$RELEASE_FLAG" ]; then
         cargo build --release

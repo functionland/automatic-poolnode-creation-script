@@ -148,12 +148,6 @@ Resources:
       VolumeId: !Ref FulaVolume
       Device: /dev/sdh
 
-  ValidatorEIP:
-    Type: AWS::EC2::EIP
-    Properties:
-      Domain: vpc
-      InstanceId: !Ref ValidatorEC2Instance
-
   ValidatorInstanceRole:
     Type: AWS::IAM::Role
     Properties:
