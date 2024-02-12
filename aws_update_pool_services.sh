@@ -2,13 +2,12 @@
 chmod 600 /home/cloudshell-user/functionland-pool.pem
 # Define your regions
 regions=(
+    us-east-2
     us-west-1
-    us-west-2
     af-south-1
     ap-east-1
     ap-south-1
     ap-south-2
-    ap-northeast-3
     ap-northeast-2
     ap-southeast-1
     ap-southeast-2
