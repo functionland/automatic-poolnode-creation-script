@@ -55,13 +55,13 @@ process_region() {
     # Import key pair and create CloudFormation stack
     # Import key pair
     aws ec2 import-key-pair --key-name functionland --public-key-material file:///home/cloudshell-user/functionland-public.b64 --region $region
-    stack_existing_status=$(aws cloudformation describe-stacks --stack-name FulaEC2Stack --region $region --query 'Stacks[0].StackStatus' --output text 2>&1)
+    stack_existing_status=$(aws cloudformation describe-stacks --stack-name FulaPoolStack --region $region --query 'Stacks[0].StackStatus' --output text 2>&1)
     # If the stack is in ROLLBACK_COMPLETE status, delete it
     if [ "$stack_existing_status" == "ROLLBACK_COMPLETE" ]; then
         echo "Stack in ROLLBACK_COMPLETE status, deleting stack in region $region"
-        aws cloudformation delete-stack --stack-name FulaEC2Stack --region $region
+        aws cloudformation delete-stack --stack-name FulaPoolStack --region $region
         echo "Waiting for stack deletion to complete..."
-        aws cloudformation wait stack-delete-complete --stack-name FulaEC2Stack --region $region
+        aws cloudformation wait stack-delete-complete --stack-name FulaPoolStack --region $region
     elif [[ $stack_existing_status == "CREATE_COMPLETE" ]]; then
         echo "Stack already exists in region $region"
         return
@@ -69,12 +69,12 @@ process_region() {
     sleep 15
     echo "creating stack for region $region"
     # Create CloudFormation stack
-    creation_output=$(aws cloudformation create-stack --stack-name FulaEC2Stack --template-body file:///home/cloudshell-user/aws-pools.yaml --parameters ParameterKey=UbuntuAmiId,ParameterValue=$(aws ec2 describe-images --region $region --filters "Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*" "Name=state,Values=available" --query "Images | sort_by(@, &CreationDate) | [-1].ImageId" --output text) ParameterKey=SeedParameter,ParameterValue="$seed_parameter" --region $region --capabilities CAPABILITY_IAM 2>&1)
+    creation_output=$(aws cloudformation create-stack --stack-name FulaPoolStack --template-body file:///home/cloudshell-user/aws-pools.yaml --parameters ParameterKey=UbuntuAmiId,ParameterValue=$(aws ec2 describe-images --region $region --filters "Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*" "Name=state,Values=available" --query "Images | sort_by(@, &CreationDate) | [-1].ImageId" --output text) ParameterKey=SeedParameter,ParameterValue="$seed_parameter" --region $region --capabilities CAPABILITY_IAM 2>&1)
     # Wait for stack creation to complete
     echo "waitting for creation of stack for region $region"
-    aws cloudformation wait stack-create-complete --stack-name FulaEC2Stack --region $region
+    aws cloudformation wait stack-create-complete --stack-name FulaPoolStack --region $region
 
-    stack_status=$(aws cloudformation describe-stacks --stack-name FulaEC2Stack --region $region --query 'Stacks[0].StackStatus' --output text)
+    stack_status=$(aws cloudformation describe-stacks --stack-name FulaPoolStack --region $region --query 'Stacks[0].StackStatus' --output text)
 
 
     if [[ $stack_status == "CREATE_COMPLETE"* ]]; then
@@ -95,10 +95,10 @@ process_region() {
         fi
     elif [[ $stack_status == "ROLLBACK_COMPLETE" ]]; then
         echo "Stack creation failed in region $region, attempting to delete stack"
-        aws cloudformation describe-stack-events --stack-name FulaEC2Stack --region $region --query 'StackEvents[?ResourceStatus==`CREATE_FAILED`].[ResourceStatusReason]' --output text
-        aws cloudformation delete-stack --stack-name FulaEC2Stack --region $region
+        aws cloudformation describe-stack-events --stack-name FulaPoolStack --region $region --query 'StackEvents[?ResourceStatus==`CREATE_FAILED`].[ResourceStatusReason]' --output text
+        aws cloudformation delete-stack --stack-name FulaPoolStack --region $region
         echo "Waiting for stack deletion to complete..."
-        aws cloudformation wait stack-delete-complete --stack-name FulaEC2Stack --region $region
+        aws cloudformation wait stack-delete-complete --stack-name FulaPoolStack --region $region
         instance_details+=("$region, $instance_ip, DELETED")
         failed_regions+=("$region")
     fi
