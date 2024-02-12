@@ -1,0 +1,267 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation template for creating an EC2 instance for non-validator node with S3 access and Elastic IP.
+
+Parameters:
+  UbuntuAmiId:
+    Type: String
+    Description: The AMI ID for the Ubuntu instance
+  Password:
+    Type: String
+    Description: Password parameter for non-validator script
+  Domain:
+    Type: String
+    Description: Domain parameter for non-validator 
+  Bootnodes:
+    Type: String
+    Description: Bootnodes parameter for non-validator
+  AvailabilityZone:
+    Type: String
+    Description: The Availability Zone where resources will be created.
+
+
+Resources:
+  InstanceReachabilityAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: "Recover instance upon system status check failure"
+      Namespace: AWS/EC2
+      MetricName: StatusCheckFailed_System
+      Dimensions:
+        - Name: InstanceId
+          Value: !Ref NonValidatorEC2Instance
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 2
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+        - !Sub "arn:aws:automate:${AWS::Region}:ec2:recover"
+  MyTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+        - Endpoint: hi@fx.land
+          Protocol: email
+
+  HighCPUAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: "Alarm when CPU exceeds 70%"
+      MetricName: CPUUtilization
+      Namespace: AWS/EC2
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 70
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - Ref: MyTopic
+      Dimensions:
+        - Name: InstanceId
+          Value: !Ref NonValidatorEC2Instance
+
+  NonValidatorInternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  NonValidatorVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+
+  NonValidatorRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref NonValidatorVPC
+
+  NonValidatorVPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref NonValidatorVPC
+      InternetGatewayId: !Ref NonValidatorInternetGateway
+
+  NonValidatorRoute:
+    Type: AWS::EC2::Route
+    DependsOn: NonValidatorVPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref NonValidatorRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref NonValidatorInternetGateway
+
+  NonValidatorSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref NonValidatorSubnet
+      RouteTableId: !Ref NonValidatorRouteTable
+
+  NonValidatorSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref NonValidatorVPC
+      CidrBlock: 10.0.0.0/24
+      AvailabilityZone:
+        Ref: AvailabilityZone
+
+  NonValidatorSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupName: nonvalidator-node
+      GroupDescription: Security Group for NonValidator Node
+      VpcId: !Ref NonValidatorVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '30334'
+          ToPort: '30334'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '30336'
+          ToPort: '30336'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '443'
+          ToPort: '443'
+          CidrIp: 0.0.0.0/0
+  FulaVolume:
+    Type: AWS::EC2::Volume
+    Properties:
+      Size: 2500
+      AvailabilityZone: !GetAtt NonValidatorEC2Instance.AvailabilityZone
+      VolumeType: gp2
+      Encrypted: false # Change based on your requirement
+
+  FulaVolumeAttachment:
+    Type: AWS::EC2::VolumeAttachment
+    Properties:
+      InstanceId: !Ref NonValidatorEC2Instance
+      VolumeId: !Ref FulaVolume
+      Device: /dev/sdh
+
+  NonValidatorEIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      InstanceId: !Ref NonValidatorEC2Instance
+
+  NonValidatorInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: NonValidatorInstancePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource: 'arn:aws:s3:::fula-validator/*'
+
+  NonValidatorInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref NonValidatorInstanceRole
+
+  NonValidatorEC2Instance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: m5.2xlarge
+      IamInstanceProfile: !Ref NonValidatorInstanceProfile
+      ImageId: !Ref UbuntuAmiId
+      KeyName: functionland
+      AvailabilityZone:
+        Ref: AvailabilityZone
+      Tags:
+        - Key: Name
+          Value: nonvalidator-node
+        - Key: Group
+          Value: validators
+      NetworkInterfaces:
+        - DeviceIndex: '0'
+          AssociatePublicIpAddress: true
+          SubnetId: !Ref NonValidatorSubnet
+          GroupSet:
+            - !Ref NonValidatorSecurityGroup
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeSize: 30
+            VolumeType: gp2
+            DeleteOnTermination: true
+      UserData:
+          Fn::Base64: !Sub |
+                #!/bin/bash
+                exec > /var/log/user-data-installation.log 2>&1
+                # Wait for the attached volume to become available
+                while ! sudo lsblk | grep -q nvme1n1; do
+                  sleep 1
+                done
+                echo "EBS volume is attached"
+
+                # Create a filesystem on the volume (if it's new)
+                sudo mkfs -t ext4 /dev/nvme1n1 
+
+                # Create the mount point directory
+                sudo mkdir -p /uniondrive
+
+                # Mount the volume
+                sudo mount /dev/nvme1n1 /uniondrive
+                sudo chown ubuntu:ubuntu /uniondrive
+                sudo chmod 777 -R /uniondrive
+                # Add an entry to /etc/fstab to auto-mount the volume on reboot
+                echo "/dev/nvme1n1 /uniondrive ext4 defaults,nofail 0 2" | sudo tee -a /etc/fstab
+
+                # Update and install NTP
+                sudo apt-get update
+                sudo apt-get install -y ntp awscli
+
+                # Once NTP is installed, query the NTP servers
+                sudo ntpq -p
+
+                # Download keys info files from S3
+                aws s3 cp s3://fula-validator/keys03.info /home/ubuntu/keys03.info
+
+                # Ensure correct ownership and permissions
+                chown ubuntu:ubuntu /home/ubuntu/keys03.info
+                chmod 600 /home/ubuntu/keys03.info
+
+                # Script to check docker logs and send email
+                cat << 'EOF' > /home/ubuntu/check_docker_logs.sh
+                #!/bin/bash
+                logs=$(sudo docker logs MyNode03 --tail 5)
+                best=$(echo "$logs" | grep -oP '(?<=best: #)\d+')
+                finalized=$(echo "$logs" | grep -oP '(?<=finalized #)\d+')
+                if (( best - finalized > 20 )); then
+                  aws sns publish --topic-arn "${MyTopic}" --message "Best is greater than finalized by more than 20. Best: $best, Finalized: $finalized"
+                fi
+                EOF
+
+                chmod +x /home/ubuntu/check_docker_logs.sh
+
+                # Setup cron job to run the script every hour
+                (crontab -l 2>/dev/null; echo "0 * * * * /home/ubuntu/check_docker_logs.sh") | crontab -
+
+                # Clone the repository
+                git clone https://github.com/functionland/automatic-poolnode-creation-script /home/ubuntu/automatic-poolnode-creation-script
+
+                # Run the script for validator 03
+                sudo -u ubuntu bash /home/ubuntu/automatic-poolnode-creation-script/nonvalidator_node.sh --release --user=ubuntu --password=${NonValidatorPassword} --node=03 --domain=${Domain} --pool=1
+                PID=$!
+                wait $PID
+                echo "NonValidator node03 is completed"

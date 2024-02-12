@@ -198,7 +198,9 @@ bash  ./aws_validator_creation.sh --eip_allocation_id='eipalloc-xxxxxxxxxxx (thi
 
 For non-validator node, you can run the below command and it installs one non-validator node on an instance and uploads the keys to the S3
 ```
+git clone https://github.com/functionland/automatic-poolnode-creation-script && cd automatic-poolnode-creation-script && git pull
 
+bash ./aws_nonvalidator_creation.sh --eip_allocation_id='eipalloc-xxxxxxxxxxx (this group contains the public IP of nonvalidator)' --password='nonvalidator password'
 ```
 
 ## Troubleshooting
