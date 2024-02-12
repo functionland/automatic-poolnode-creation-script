@@ -182,7 +182,7 @@ setup_node_service() {
         ENVIRONMENT="RUST_LOG=debug,proof_engine=debug,fula-pallet=debug"
     else
         # Release mode service configuration
-        EXEC_START="/usr/bin/docker run -u root --rm --name MyNode$NODE_NO --network host -v $SECRET_DIR/password.txt:/password.txt -v $KEYS_DIR:/keys -v $DATA_DIR:/data functionland/sugarfunge-node:amd64-latest --chain /customSpecRaw.json --enable-offchain-indexing true --base-path=/data --keystore-path=/keys --port=$PORT --rpc-port $RPC_PORT --rpc-cors=all --rpc-methods=Unsafe --rpc-external --name Node$NODE_NO --password-filename=\"/password.txt\" --node-key=$NODE_KEY $BOOTNODES_PARAM"
+        EXEC_START="/usr/bin/docker run -u root --rm --name MyNode$NODE_NO --network host -v $SECRET_DIR/password.txt:/password.txt -v $KEYS_DIR:/keys -v $DATA_DIR:/data functionland/sugarfunge-node:amd64-latest --chain /customSpecRaw.json --enable-offchain-indexing true --base-path=/data --keystore-path=/keys --port=$PORT --rpc-port $RPC_PORT --rpc-cors=all --rpc-methods=Unsafe --rpc-external --name Node$NODE_NO --password-filename=\"/password.txt\" --node-key=$NODE_KEY --pruning archive $BOOTNODES_PARAM"
         USER_NODE="root"
         ENVIRONMENT=""
     fi
@@ -226,16 +226,16 @@ setup_api_service() {
         EXEC_START="/home/$USER/sugarfunge-api/target/debug/sugarfunge-api --db-uri=/data --node-server ws://127.0.0.1:$RPC_PORT"
         USER_API=$USER
         ENVIRONMENT="RUST_LOG=debug,proof_engine=debug,fula-pallet=debug \
-FULA_SUGARFUNGE_API_HOST=http://127.0.0.1:$HTTP_PORT \
-FULA_CONTRACT_API_HOST=https://contract-api.functionyard.fula.network \
--LABOR_TOKEN_CLASS_ID=100 \
-LABOR_TOKEN_ASSET_ID=100 \
-CHALLENGE_TOKEN_CLASS_ID=110 \
-CHALLENGE_TOKEN_ASSET_ID=100 \
-LABOR_TOKEN_VALUE=1 \
-CHALLENGE_TOKEN_VALUE=1 \
-CLAIMED_TOKEN_CLASS_ID=120 \
-CLAIMED_TOKEN_ASSET_ID=100"
+,FULA_SUGARFUNGE_API_HOST=http://127.0.0.1:$HTTP_PORT \
+,FULA_CONTRACT_API_HOST=https://contract-api.functionyard.fula.network \
+,LABOR_TOKEN_CLASS_ID=100 \
+,LABOR_TOKEN_ASSET_ID=100 \
+,CHALLENGE_TOKEN_CLASS_ID=110 \
+,CHALLENGE_TOKEN_ASSET_ID=100 \
+,LABOR_TOKEN_VALUE=1 \
+,CHALLENGE_TOKEN_VALUE=1 \
+,CLAIMED_TOKEN_CLASS_ID=120 \
+,CLAIMED_TOKEN_ASSET_ID=100"
     else
         # Release mode service configuration
         EXEC_START="/usr/bin/docker run -u root --rm --name NodeAPI$NODE_NO --network host \

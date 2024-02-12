@@ -133,7 +133,7 @@ Resources:
   FulaVolume:
     Type: AWS::EC2::Volume
     Properties:
-      Size: 2500
+      Size: 1000
       AvailabilityZone: !GetAtt NonValidatorEC2Instance.AvailabilityZone
       VolumeType: gp2
       Encrypted: false # Change based on your requirement
