@@ -102,6 +102,8 @@ Resources:
     Properties:
       VpcId: !Ref ValidatorVPC
       CidrBlock: 10.0.0.0/24
+      AvailabilityZone:
+        Ref: AvailabilityZone
 
   ValidatorSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
