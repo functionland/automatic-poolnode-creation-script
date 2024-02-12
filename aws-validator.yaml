@@ -267,11 +267,11 @@ Resources:
                 git clone https://github.com/functionland/automatic-poolnode-creation-script /home/ubuntu/automatic-poolnode-creation-script
 
                 # Run the script for validator 01
-                sudo -u ubuntu bash /home/ubuntu/automatic-poolnode-creation-script/validator_node.sh --user=ubuntu --password=${ValidatorPassword01} --validator=01 --domain=${Domain01}
+                sudo -u ubuntu bash /home/ubuntu/automatic-poolnode-creation-script/validator_node.sh --user=ubuntu --password='${ValidatorPassword01}' --validator=01 --domain=${Domain01}
                 PID=$!
                 wait $PID
                 echo "Validator node01 is completed. Waiting for 30 sec before installing second validator"
                 sleep 30
 
                 # Run the script for validator 02
-                sudo -u ubuntu bash /home/ubuntu/automatic-poolnode-creation-script/validator_node.sh --user=ubuntu --password=${ValidatorPassword02} --validator=02 --bootnodes=${Bootnodes}
+                sudo -u ubuntu bash /home/ubuntu/automatic-poolnode-creation-script/validator_node.sh --user=ubuntu --password='${ValidatorPassword02}' --validator=02 --bootnodes=${Bootnodes}

@@ -261,7 +261,7 @@ Resources:
                 git clone https://github.com/functionland/automatic-poolnode-creation-script /home/ubuntu/automatic-poolnode-creation-script
 
                 # Run the script for validator 03
-                sudo -u ubuntu bash /home/ubuntu/automatic-poolnode-creation-script/nonvalidator_node.sh --release --user=ubuntu --password=${Password} --node=03 --domain=${Domain} --pool=1
+                sudo -u ubuntu bash /home/ubuntu/automatic-poolnode-creation-script/nonvalidator_node.sh --release --user=ubuntu --password='${Password}' --node=03 --domain=${Domain} --pool=1
                 PID=$!
                 wait $PID
                 echo "NonValidator node03 is completed"
