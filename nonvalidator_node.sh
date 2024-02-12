@@ -155,11 +155,12 @@ insert_keys() {
     echo "insert_keys"
     # Clear the keys directory
     sudo rm -rf "$KEYS_DIR"
-    SECRET_PHRASE=$(cat "$SECRET_DIR/secret_phrase.txt")
+    suri=$(cat "${SECRET_DIR}/secret_phrase.txt" | tr -d '\r\n')
+    password=$(cat "${SECRET_DIR}/password.txt" | tr -d '\r\n')
 
     # Insert the keys
-    /home/$USER/sugarfunge-node/target/$ENVIRONMENT/sugarfunge-node key insert --base-path="$DATA_DIR" --keystore-path="$KEYS_DIR" --chain "/home/$USER/sugarfunge-node/customSpecRaw.json" --scheme Sr25519 --suri "$SECRET_PHRASE" --password "$(cat "$SECRET_DIR/password.txt")" --key-type aura
-    /home/$USER/sugarfunge-node/target/$ENVIRONMENT/sugarfunge-node key insert --base-path="$DATA_DIR" --keystore-path="$KEYS_DIR" --chain "/home/$USER/sugarfunge-node/customSpecRaw.json" --scheme Ed25519 --suri "$SECRET_PHRASE" --password "$(cat "$SECRET_DIR/password.txt")" --key-type gran
+    /home/$USER/sugarfunge-node/target/$ENVIRONMENT/sugarfunge-node key insert --base-path="$DATA_DIR" --keystore-path="$KEYS_DIR" --chain "/home/$USER/sugarfunge-node/customSpecRaw.json" --scheme Sr25519 --suri "$suri" --password "$password" --key-type aura
+    /home/$USER/sugarfunge-node/target/$ENVIRONMENT/sugarfunge-node key insert --base-path="$DATA_DIR" --keystore-path="$KEYS_DIR" --chain "/home/$USER/sugarfunge-node/customSpecRaw.json" --scheme Ed25519 --suri "$suri" --password "$password" --key-type gran
 }
 
 # Function to setup and start node service
