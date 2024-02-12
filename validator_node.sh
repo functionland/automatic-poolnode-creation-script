@@ -349,7 +349,7 @@ install_rust() {
 # Function to clone and build repositories
 clone_and_build() {
 	echo "Installing sugarfunge-node"
-    if [ ! -d "sugarfunge-node" ] || [ -z "$(ls -A sugarfunge-node)" ]; then
+    if [ ! -d "/home/${USER}/sugarfunge-node" ] || [ -z "$(ls -A /home/${USER}/sugarfunge-node)" ]; then
         sudo git clone https://github.com/functionland/sugarfunge-node.git /home/${USER}/sugarfunge-node
     fi
     sudo chown -R ubuntu:ubuntu /home/${USER}/sugarfunge-node
