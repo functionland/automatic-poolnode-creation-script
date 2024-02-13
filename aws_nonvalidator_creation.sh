@@ -44,7 +44,7 @@ curl -o /home/cloudshell-user/aws-nonvalidator.yaml "$cloudformation_yaml_path"
 # Set permissions for the key file
 chmod 600 /home/cloudshell-user/functionland.pem
 domain="api.node3.functionyard.fula.network"
-bootnodes="/ip4/127.0.0.1/tcp/30334/p2p/12D3KooWBeXV65svCyknCvG1yLxXVFwRxzBLqvBJnUF6W84BLugv"
+bootnodes="/dns4/node.functionyard.fula.network/tcp/30334/p2p/12D3KooWBeXV65svCyknCvG1yLxXVFwRxzBLqvBJnUF6W84BLugv"
 
 # Import key pair
 aws ec2 import-key-pair --key-name functionland --public-key-material file:///home/cloudshell-user/functionland-public.b64 --region $region
