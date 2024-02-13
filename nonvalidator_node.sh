@@ -110,7 +110,7 @@ HTTP_PORT=$(calculate_http_port)
 KEYS_INFO_PATH="/home/$USER/keys$NODE_NO.info"
 BASE_DIR="/home/$USER/.sugarfunge-node"
 SECRET_DIR="$BASE_DIR/passwords$NODE_NO"
-DATA_DIR="$BASE_DIR/data/node$NODE_NO"
+DATA_DIR="/uniondrive/data$NODE_NO"
 KEYS_DIR="$BASE_DIR/keys/node$NODE_NO"
 LOG_DIR="/var/log"
 
