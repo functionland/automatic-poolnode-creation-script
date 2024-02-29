@@ -399,7 +399,7 @@ create_pool() {
         -d "{\"seed\": \"$seed\", \"pool_name\": \"$pool_name\", \"peer_id\": \"$node_peerid\", \"region\": \"$region\"}")
         
         # Extract the pool_id from the response
-        pool_id=$(cat response.json | jq '.pool_id')
+        pool_id=$(jq '.pool_id' < response.json)
         rm response.json  # Clean up the temporary file
 
         # Check if the pool was created successfully (HTTP status 200) and pool_id is not null
@@ -457,11 +457,11 @@ IpniPublishDirectAnnounce:
 EOF
 
     # Conditionally append identity and ipniPublisherIdentity if they exist
-    if [ ! -z "$EXISTING_IDENTITY" ]; then
+    if [ -n "$EXISTING_IDENTITY" ]; then
         echo "identity: $EXISTING_IDENTITY" >> "$config_path"
     fi
 
-    if [ ! -z "$EXISTING_IPNI_PUBLISHER_IDENTITY" ]; then
+    if [ -n "$EXISTING_IPNI_PUBLISHER_IDENTITY" ]; then
         echo "ipniPublisherIdentity: $EXISTING_IPNI_PUBLISHER_IDENTITY" >> "$config_path"
     fi
     echo "Fula config file created at $config_path."

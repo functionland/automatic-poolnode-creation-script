@@ -158,8 +158,9 @@ insert_keys() {
     echo "insert_keys"
     # Clear the keys directory
     sudo rm -rf "$KEYS_DIR"
-    suri=$(cat "${SECRET_DIR}/secret_phrase.txt" | tr -d '\r\n')
-    password=$(cat "${SECRET_DIR}/password.txt" | tr -d '\r\n')
+    suri=$(tr -d '\r\n' < "${SECRET_DIR}/secret_phrase.txt")
+    password=$(tr -d '\r\n' < "${SECRET_DIR}/password.txt")
+
 
     # Insert the keys
     /home/$USER/sugarfunge-node/target/$ENVIRONMENT/sugarfunge-node key insert --base-path="$DATA_DIR" --keystore-path="$KEYS_DIR" --chain "/home/$USER/sugarfunge-node/customSpecRaw.json" --scheme Sr25519 --suri "$suri" --password "$password" --key-type aura
@@ -175,7 +176,7 @@ setup_node_service() {
     USER_NODE=$USER
     NODE_KEY=$(cat "$SECRET_DIR/node_key.txt")
     BOOTNODES_PARAM=""
-    if [ ! -z "$BOOTSTRAP_NODE" ]; then
+    if [ -n "$BOOTSTRAP_NODE" ]; then
         BOOTNODES_PARAM="--bootnodes $BOOTSTRAP_NODE"
     fi
 
@@ -453,7 +454,7 @@ configure_auto_ssl_renewal() {
     CRON_IDENTIFIER="#AUTO_SSL_RENEWAL"
 
     # Write out the current crontab for the root user
-    sudo crontab -l > mycron || true  # The 'true' ensures that the script doesn't exit if crontab is empty
+    sudo crontab -l | sudo tee mycron > /dev/null 
 
     # Check if the cron job already exists
     if ! grep -q "$CRON_IDENTIFIER" mycron; then
@@ -520,7 +521,7 @@ clone_and_build_node() {
     sudo chown -R ubuntu:ubuntu /home/${USER}/sugarfunge-node
     sudo chmod -R 777 /home/${USER}/sugarfunge-node
     cd /home/${USER}/sugarfunge-node
-    if [ ! -z "$RELEASE_FLAG" ]; then
+    if [ -n "$RELEASE_FLAG" ]; then
         cargo build --release
     else
         cargo build
@@ -550,7 +551,7 @@ clone_and_build_proof_engine() {
     sudo chown -R ubuntu:ubuntu /home/${USER}/proof-engine
     sudo chmod -R 777 /home/${USER}/proof-engine
     cd /home/${USER}/proof-engine
-    if [ ! -z "$RELEASE_FLAG" ]; then
+    if [ -n "$RELEASE_FLAG" ]; then
         cargo build --release --features headless
     else
         cargo build --features headless
@@ -567,7 +568,7 @@ clone_and_build_api() {
     sudo chown -R ubuntu:ubuntu /home/${USER}/sugarfunge-api
     sudo chmod -R 777 /home/${USER}/sugarfunge-api
     cd /home/${USER}/sugarfunge-api
-    if [ ! -z "$RELEASE_FLAG" ]; then
+    if [ -n "$RELEASE_FLAG" ]; then
         cargo build --release
     else
         cargo build
@@ -717,11 +718,11 @@ IpniPublishDirectAnnounce:
 EOF
 
     # Conditionally append identity and ipniPublisherIdentity if they exist
-    if [ ! -z "$EXISTING_IDENTITY" ]; then
+    if [ -n "$EXISTING_IDENTITY" ]; then
         echo "identity: $EXISTING_IDENTITY" >> "$config_path"
     fi
 
-    if [ ! -z "$EXISTING_IPNI_PUBLISHER_IDENTITY" ]; then
+    if [ -n "$EXISTING_IPNI_PUBLISHER_IDENTITY" ]; then
         echo "ipniPublisherIdentity: $EXISTING_IPNI_PUBLISHER_IDENTITY" >> "$config_path"
     fi
     echo "Fula config file created at $config_path."
@@ -839,13 +840,22 @@ main() {
     # Check if NODE_DOMAIN is not empty
     local NODE_ADDRESS
     if [ "$NODE_DOMAIN" != "" ]; then
-        # Configure NGINX for WSS
-        echo "Configuring wss"
+        # Configure NGINX for HTTP
+        echo "Configuring http"
         configure_nginx
 
         # Obtain SSL certificates from Let's Encrypt
-        echo "Obtaining SSL certificate"
+        echo "Obtaining SSL certificate http"
         obtain_ssl_certificates
+
+        # Configure NGINX for WSS
+        echo "Configuring wss"
+        configure_nginx_wss
+
+        # Obtain SSL certificates from Let's Encrypt
+        echo "Obtaining SSL certificate wss"
+        obtain_ssl_certificates_wss
+
 
         # Configure automatic SSL certificate renewal
         echo "Configuring cronjob for auto SSL renewal"

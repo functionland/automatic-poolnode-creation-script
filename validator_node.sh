@@ -137,8 +137,9 @@ insert_keys() {
     sudo rm -rf "$KEYS_DIR"
 
     # Insert the keys
-    suri=$(cat "${SECRET_DIR}/secret_phrase.txt" | tr -d '\r\n')
-    password=$(cat "${SECRET_DIR}/password.txt" | tr -d '\r\n')
+    suri=$(tr -d '\r\n' < "${SECRET_DIR}/secret_phrase.txt")
+    password=$(tr -d '\r\n' < "${SECRET_DIR}/password.txt")
+
 
     /home/$USER/sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --keystore-path="$KEYS_DIR" --chain "/home/${USER}/sugarfunge-node/customSpecRaw.json" --scheme Sr25519 --suri "$suri" --password "$password" --key-type aura
     /home/$USER/sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --keystore-path="$KEYS_DIR" --chain "/home/${USER}/sugarfunge-node/customSpecRaw.json" --scheme Ed25519 --suri "$suri" --password "$password" --key-type gran
@@ -315,7 +316,7 @@ configure_auto_ssl_renewal() {
     CRON_IDENTIFIER="#AUTO_SSL_RENEWAL"
 
     # Write out the current crontab for the root user
-    sudo crontab -l > mycron || true  # The 'true' ensures that the script doesn't exit if crontab is empty
+    sudo crontab -l | sudo tee mycron > /dev/null # The 'true' ensures that the script doesn't exit if crontab is empty
 
     # Check if the cron job already exists
     if ! grep -q "$CRON_IDENTIFIER" mycron; then
