@@ -13,6 +13,7 @@ USER="ubuntu" # <-- set with --user or eliminate for ubuntu
 NODE_NO="" # <-- set with --node or eliminate for 03
 PASSWORD="" # <-- set with --password  or eliminate for a random password
 NODE_DOMAIN="" # <-- set with --domain or eliminate
+NODE_API_DOMAIN=""
 BOOTSTRAP_NODE="" # <-- set with --bootnodes or eliminate
 POOL_ID="" # <-- set with --pool or eliminate
 RELEASE_FLAG="" # Set with --release for production build
@@ -59,6 +60,8 @@ done
 
 if [ -z "$NODE_DOMAIN" ]; then
     echo "missing domain parameter. Skipping the domain handling"
+else
+    NODE_API_DOMAIN="api.${NODE_DOMAIN}"
 fi
 
 if [ -z "$NODE_NO" ]; then
@@ -324,9 +327,64 @@ pull_docker_image_api() {
     fi
 }
 
-# Function to configure NGINX for WSS
+# Function to configure NGINX for HTTP
 configure_nginx() {
     echo "Configuring NGINX for HTTP..."
+    NGINX_CONF="/etc/nginx/sites-available/default"
+
+    # Create a backup of the original default config
+    sudo cp $NGINX_CONF $NGINX_CONF.bak
+
+    # Check if the domain is already in the NGINX configuration
+    if ! grep -q "$NODE_API_DOMAIN" "$NGINX_CONF"; then
+        echo "Adding new server configuration to NGINX..."
+
+        # Define the new server block configuration
+        NEW_SERVER_BLOCK=$(cat <<EOF
+
+server {
+    listen 80;
+    server_name $NODE_API_DOMAIN;
+
+    location / {
+        proxy_pass http://127.0.0.1:$HTTP_PORT;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host;
+
+        # WebSocket specific settings
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_read_timeout 86400; # 24 hours timeout
+    }
+}
+EOF
+        )
+
+        # Append the new server block to the NGINX configuration
+        echo "$NEW_SERVER_BLOCK" | sudo tee -a "$NGINX_CONF"
+
+        # Test and reload NGINX
+        sudo nginx -t && sudo systemctl reload nginx
+        echo "New server configuration added and NGINX reloaded."
+    else
+        echo "The server name $NODE_API_DOMAIN already exists in the NGINX configuration."
+    fi
+}
+
+# Function to obtain SSL certificates from Let's Encrypt
+obtain_ssl_certificates() {
+    echo "Obtaining SSL certificates from Let's Encrypt for $NODE_API_DOMAIN..."
+
+    # Obtain the certificate (this also modifies the Nginx config for you)
+    sudo certbot --nginx -m "$EMAIL" --agree-tos --no-eff-email -d "$NODE_API_DOMAIN" --redirect --keep-until-expiring --non-interactive
+}
+
+# Function to configure NGINX for WSS
+configure_nginx_wss() {
+    echo "Configuring NGINX for WSS..."
     NGINX_CONF="/etc/nginx/sites-available/default"
 
     # Create a backup of the original default config
@@ -344,7 +402,7 @@ server {
     server_name $NODE_DOMAIN;
 
     location / {
-        proxy_pass http://127.0.0.1:$HTTP_PORT;
+        proxy_pass http://127.0.0.1:$RPC_PORT;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection "upgrade";
@@ -372,12 +430,13 @@ EOF
 }
 
 # Function to obtain SSL certificates from Let's Encrypt
-obtain_ssl_certificates() {
+obtain_ssl_certificates_wss() {
     echo "Obtaining SSL certificates from Let's Encrypt for $NODE_DOMAIN..."
 
     # Obtain the certificate (this also modifies the Nginx config for you)
     sudo certbot --nginx -m "$EMAIL" --agree-tos --no-eff-email -d "$NODE_DOMAIN" --redirect --keep-until-expiring --non-interactive
 }
+
 
 # Function to set LIBCLANG_PATH for the user
 set_libclang_path() {
