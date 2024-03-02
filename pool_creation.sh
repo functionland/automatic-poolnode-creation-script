@@ -4,13 +4,77 @@ set -e
 
 # Variables
 USER="ubuntu"
-PASSWORD_FILE="/home/$USER/password.txt"
-SECRET_DIR="/home/$USER/.secrets"
+
+CLOUDFLARE_API_TOKEN=""
+POOL_DOMAIN=""
+CLOUDFLARE_ZONE_ID=""
+MASTER_SEED=""
+
+# Function to show usage
+usage() {
+    echo "Usage: $0 --seed=123 --user=ubuntu --cloudflaretoken=API_TOKEN --domain=test.fx.land"
+    exit 1
+}
+
+# Parse named parameters
+while [ "$1" != "" ]; do
+    case $1 in
+        --seed=*)
+            MASTER_SEED="${1#*=}"
+            ;;
+        --cloudflaretoken=*)
+            CLOUDFLARE_API_TOKEN="${1#*=}"
+            ;;
+        --cloudflarezone=*)
+            CLOUDFLARE_ZONE_ID="${1#*=}"
+            ;;
+        --user=*)
+            USER="${1#*=}"
+            ;;
+        --domain=*)
+            POOL_DOMAIN="${1#*=}"
+            ;;
+        *)
+            echo "$1 i not supported"
+            usage
+            ;;
+    esac
+    shift
+done
+
+if [ -z "$POOL_DOMAIN" ]; then
+    echo "missing domain parameter. Skipping the domain handling"
+else
+    POOL_DOMAIN="functionyard.fula.network"
+fi
+
+if [ -z "$USER" ]; then
+    echo "missing USER parameter."
+    USER="ubuntu"
+fi
+
+if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+    echo "missing CLOUDFLARE_API_TOKEN parameter."
+    usage
+fi
+
+if [ -z "$CLOUDFLARE_ZONE_ID" ]; then
+    echo "missing CLOUDFLARE_ZONE_ID parameter."
+    usage
+fi
+
+if [ -z "$MASTER_SEED" ]; then
+    echo "missing MASTER_SEED parameter."
+    usage
+fi
+
+PASSWORD_FILE="/home/${USER}/password.txt"
+SECRET_DIR="/home/${USER}/.secrets"
 DATA_DIR="/uniondrive/data"
 LOG_DIR="/var/log"
-USER_HOME="/home/ubuntu"
+USER_HOME="/home/${USER}"
 FULA_CONFIG="/home/${USER}/.fula/config.yaml"
-mkdir -p $DATA_DIR
+mkdir -p "${DATA_DIR}"
 
 # Function to map AWS region to your custom region naming convention
 get_region_name() {
@@ -408,7 +472,7 @@ fund_account() {
         # Fund the account
         fund_response=$(curl -s -X POST https://api.node3.functionyard.fula.network/account/fund \
         -H "Content-Type: application/json" \
-        -d "{\"seed\": \"$MASTER_SEED\", \"amount\": 1000000000000000000, \"to\": \"$account\"}")
+        -d "{\"seed\": \"$MASTER_SEED\", \"amount\": 4000000000000000000, \"to\": \"$account\"}")
         
         echo "Fund response: $fund_response"
     else
@@ -797,6 +861,21 @@ zip_and_upload() {
     rm "$zip_filename"
 }
 
+create_cloudflare_dns_record() {
+  peer_id="$1"
+  public_ip="$2"
+
+  # Construct the DNS record name
+  dns_record="${peer_id}.${POOL_DOMAIN}"
+
+  # Create DNS A Record using Cloudflare API
+  curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records" \
+       -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+       -H "Content-Type: application/json" \
+       --data "{\"type\":\"A\",\"name\":\"${dns_record}\",\"content\":\"${public_ip}\",\"ttl\":120,\"proxied\":false}"
+}
+
+
 # Main script execution
 main() {
 	# Set DEBIAN_FRONTEND to noninteractive to avoid interactive prompts
@@ -809,7 +888,6 @@ main() {
         exit 1
     fi
 	
-	export MASTER_SEED=$1
 
     if [ $# -eq 1 ]; then
         # Only one argument provided, find the region automatically
@@ -888,10 +966,15 @@ main() {
     # setup ipfscluster service
     config_ipfscluster
     setup_ipfscluster_service
+
+    # Setup domain name
+    local peer_id_for_domin
+    local public_ip
+    public_ip=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
+    peer_id_for_domain=$(cat "$SECRET_DIR/node_peerid.txt")
+    create_cloudflare_dns_record "$peer_id_for_domain" "$public_ip"
 	
 	cleanup
-	
-	unset MASTER_SEED
 
     echo "Setup complete."
 
