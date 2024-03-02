@@ -396,7 +396,7 @@ configure_nginx_wss() {
         echo "Adding new server configuration to NGINX..."
 
         # Define the new server block configuration
-        NEW_SERVER_BLOCK=$(cat <<EOF
+        NEW_SERVER_BLOCK_WSS=$(cat <<EOF
 
 server {
     listen 80;
@@ -420,7 +420,7 @@ EOF
         )
 
         # Append the new server block to the NGINX configuration
-        echo "$NEW_SERVER_BLOCK" | sudo tee -a "$NGINX_CONF"
+        echo "$NEW_SERVER_BLOCK_WSS" | sudo tee -a "$NGINX_CONF"
 
         # Test and reload NGINX
         sudo nginx -t && sudo systemctl reload nginx
