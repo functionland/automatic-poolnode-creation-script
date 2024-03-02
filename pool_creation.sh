@@ -74,7 +74,7 @@ DATA_DIR="/uniondrive/data"
 LOG_DIR="/var/log"
 USER_HOME="/home/${USER}"
 FULA_CONFIG="/home/${USER}/.fula/config.yaml"
-mkdir -p "${DATA_DIR}"
+sudo mkdir -p "${DATA_DIR}"
 
 # Function to map AWS region to your custom region naming convention
 get_region_name() {
@@ -266,7 +266,7 @@ clone_and_build() {
 # Function to set up and extract keys
 setup_and_extract_keys() {
 	echo "setup_and_extract_keys"
-    mkdir -p "$SECRET_DIR"
+    sudo mkdir -p "$SECRET_DIR"
     if [ ! -f "$SECRET_DIR/secret_phrase.txt" ] || [ ! -f "$SECRET_DIR/secret_seed.txt" ]; then
         output=$(/home/$USER/sugarfunge-node/target/release/sugarfunge-node key generate --scheme Sr25519 --password="$(cat "$PASSWORD_FILE")" 2>&1)
         echo "$output"
@@ -423,7 +423,7 @@ setup_gofula_service() {
     echo "Extracted blox peer ID: $blox_peer_id"
 
     # Save the blox peer ID to the file
-	mkdir -p "$SECRET_DIR"
+	sudo mkdir -p "$SECRET_DIR"
     echo -n "$blox_peer_id" > "$SECRET_DIR/node_peerid.txt"
     echo "Blox peer ID saved to $SECRET_DIR/node_peerid.txt"
 
@@ -527,7 +527,7 @@ setup_fula_config() {
     config_path="/home/$USER/.fula/config.yaml"
 
     # Check if the Fula config file already exists
-    mkdir -p /home/$USER/.fula/blox/store
+    sudo mkdir -p /home/$USER/.fula/blox/store
 
     # Since we are initOnly and creating hte config before this step to create identity, we need to read the identity and ipniIdentity before replacing them
     EXISTING_IPNI_PUBLISHER_IDENTITY=$(grep 'ipniPublisherIdentity:' "$config_path" | awk '{print $2}')
@@ -580,7 +580,7 @@ config_ipfs() {
 
 # Function to set up and start IPFS service
 setup_ipfs_service() {
-    mkdir -p "/home/${USER}/.fula/ipfs_data"
+    sudo mkdir -p "/home/${USER}/.fula/ipfs_data"
     ipfs_service_file_path="/etc/systemd/system/ipfs.service"
     echo "Setting up IPFS service at ${ipfs_service_file_path}"
     # Debug mode service configuration
@@ -667,7 +667,7 @@ setup_ipfscluster_service() {
         sleep 5
     done
 
-    mkdir -p "${DATA_DIR}/ipfs-cluster"
+    sudo mkdir -p "${DATA_DIR}/ipfs-cluster"
     ipfscluster_service_file_path="/etc/systemd/system/ipfscluster.service"
     echo "Setting up IPFS CLUSTER service at ${ipfscluster_service_file_path}"
     # Debug mode service configuration
