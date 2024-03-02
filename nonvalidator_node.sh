@@ -860,7 +860,7 @@ main() {
         # Configure automatic SSL certificate renewal
         echo "Configuring cronjob for auto SSL renewal"
         configure_auto_ssl_renewal
-        NODE_ADDRESS="/dns4/node.functionyard.fula.network/tcp/$PORT/p2p/$PEER_ID"
+        NODE_ADDRESS="/dns4/${NODE_DOMAIN}/tcp/$PORT/p2p/$PEER_ID"
     else
         echo "NODE_DOMAIN is not set. Skipping SSL and NGINX configuration."
         NODE_ADDRESS="/ip4/127.0.0.1/tcp/$PORT/p2p/$PEER_ID"
