@@ -9,6 +9,7 @@ SECRET_DIR="/home/$USER/.secrets"
 DATA_DIR="/uniondrive/data"
 LOG_DIR="/var/log"
 USER_HOME="/home/ubuntu"
+FULA_CONFIG="/home/${USER}/.fula/config.yaml"
 mkdir -p $DATA_DIR
 
 # Function to map AWS region to your custom region naming convention
@@ -53,6 +54,15 @@ get_aws_token() {
 get_aws_region() {
     local token=$1
     echo $(curl -H "X-aws-ec2-metadata-token: $token" http://169.254.169.254/latest/meta-data/placement/region -s)
+}
+
+install_packages() {
+    sudo apt-get update -qq
+    sudo apt-get install -y docker.io nginx software-properties-common certbot python3-certbot-nginx
+    sudo apt-get install -y wget git curl build-essential jq pkg-config libssl-dev protobuf-compiler llvm libclang-dev clang plocate cmake
+    sudo apt-get install -y g++ libx11-dev libasound2-dev libudev-dev libxkbcommon-x11-0
+    sudo systemctl start docker
+    sudo systemctl enable docker
 }
 
 # Main function to find pool region on aws
@@ -128,31 +138,64 @@ install_rust() {
 	rustup target add wasm32-unknown-unknown
 }
 
+# Function to pull the required Docker image and verify
+pull_docker_image_ipfs() {
+    echo "Pulling the required Docker image ipfs..."
+    sudo docker pull ipfs/kubo:master-latest
+
+    # Check if the image was pulled successfully
+    if sudo docker images | grep -q 'ipfs/kubo:master-latest'; then
+        echo "Docker image kubo pulled successfully."
+    else
+        echo "Error: Docker image kubo pull failed."
+        exit 1
+    fi
+}
+
+# Function to pull the required Docker image and verify
+pull_docker_image_ipfs_cluster() {
+    echo "Pulling the required Docker image ipfs-cluster..."
+    sudo docker pull ipfs/ipfs-cluster:stable
+
+    # Check if the image was pulled successfully
+    if sudo docker images | grep -q 'ipfs/ipfs-cluster:stable'; then
+        echo "Docker image ipfs-cluster pulled successfully."
+    else
+        echo "Error: Docker image ipfs-cluster pull failed."
+        exit 1
+    fi
+}
+
 # Function to clone and build repositories
 clone_and_build() {
 	echo "Installing sugarfunge-api"
-    if [ ! -d "sugarfunge-api" ] || [ -z "$(ls -A sugarfunge-api)" ]; then
-        git clone https://github.com/functionland/sugarfunge-api.git
+    if [ ! -d "/home/${USER}/sugarfunge-api" ] || [ -z "$(ls -A /home/${USER}/sugarfunge-api)" ]; then
+        git clone https://github.com/functionland/sugarfunge-api.git  /home/${USER}/sugarfunge-api
     fi
-    cd sugarfunge-api
+    cd /home/${USER}/sugarfunge-api
     cargo build --release
     cd ..
 	
 	echo "Installing sugarfunge-node"
-    if [ ! -d "sugarfunge-node" ] || [ -z "$(ls -A sugarfunge-node)" ]; then
-        git clone https://github.com/functionland/sugarfunge-node.git
+    if [ ! -d "/home/${USER}/sugarfunge-node" ] || [ -z "$(ls -A /home/${USER}/sugarfunge-node)" ]; then
+        git clone https://github.com/functionland/sugarfunge-node.git  /home/${USER}/sugarfunge-node
     fi
-    cd sugarfunge-node
+    cd /home/${USER}/sugarfunge-node
     cargo build --release
     cd ..
 
 	echo "Installing go-fula"
-    if [ ! -d "go-fula" ] || [ -z "$(ls -A go-fula)" ]; then
-        git clone https://github.com/functionland/go-fula.git
+    if [ ! -d "/home/${USER}/go-fula" ] || [ -z "$(ls -A /home/${USER}/go-fula)" ]; then
+        git clone https://github.com/functionland/go-fula.git  /home/${USER}/go-fula
     fi
-    cd go-fula
+    cd /home/${USER}/go-fula
     go build -o go-fula ./cmd/blox
     cd ..
+
+    echo "Clonning fula-ota"
+    if [ ! -d "/home/${USER}/fula-ota" ] || [ -z "$(ls -A /home/${USER}/fula-ota)" ]; then
+        git clone https://github.com/functionland/fula-ota.git /home/${USER}/fula-ota
+    fi
 }
 
 
@@ -249,7 +292,7 @@ setup_api_service() {
 	else
 		echo "$api_service_file_path does not exist."
 	fi
-    sudo bash -c "cat > '$api_service_file_path'" << EOF
+    sudo tee "$api_service_file_path" > /dev/null << EOF
 [Unit]
 Description=Sugarfunge API
 After=sugarfunge-node.service
@@ -329,7 +372,7 @@ After=network.target
 [Service]
 Type=simple
 Environment=HOME=/home/$USER
-ExecStart=/home/$USER/go-fula/go-fula --config /home/$USER/.fula/config.yaml
+ExecStart=/home/$USER/go-fula/go-fula --config /home/$USER/.fula/config.yaml --poolHost
 Restart=always
 RestartSec=10s
 StartLimitInterval=5min
@@ -467,6 +510,175 @@ EOF
     echo "Fula config file created at $config_path."
 }
 
+config_ipfs() {
+    go run /home/${USER}/go-fula/modules/initipfs --internal="/home/${USER}/.fula" --external="/uniondrive" --defaultIpfsConfig="/home/${USER}/fula-ota/docker/fxsupport/linux/kubo/config" --apiIp="127.0.0.1"
+}
+
+# Function to set up and start IPFS service
+setup_ipfs_service() {
+    mkdir -p "/home/${USER}/.fula/ipfs_data"
+    ipfs_service_file_path="/etc/systemd/system/ipfs.service"
+    echo "Setting up IPFS service at ${ipfs_service_file_path}"
+    # Debug mode service configuration
+    EXEC_START="/usr/bin/docker run -u root --rm --name ipfs_host --network host \
+-e IPFS_PROFILE=badgerds \
+-e IPFS_PATH=/internal/ipfs_data \
+-v ${DATA_DIR}/ipfs_staging:/export:rw,shared,uid=1000,gid=1000 \
+-v ${DATA_DIR}:/uniondrive:rw,shared,uid=1000,gid=1000 \
+-v /home/${USER}/.fula:/internal:rw,shared,uid=1000,gid=1000 \
+-v /home/${USER}/fula-ota/docker/fxsupport/linux/kubo:/container-init.d:rw,shared,uid=1000,gid=1000
+ipfs/kubo:master-latest"
+    ENVIRONMENT="IPFS_PROFILE=badgerds \
+,IPFS_PATH=/internal/ipfs_data"
+
+    sudo bash -c "cat > '${ipfs_service_file_path}'" << EOF
+[Unit]
+Description=IPFS
+
+[Service]
+Type=simple
+User=$USER_API
+Environment=$ENVIRONMENT
+ExecStart=$EXEC_START
+Restart=always
+RestartSec=10s
+StartLimitInterval=5min
+StartLimitBurst=4
+StandardOutput=file:"${LOG_DIR}/ipfs.log"
+StandardError=file:"${LOG_DIR}/ipfs.err"
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    sudo systemctl daemon-reload
+    sudo systemctl enable ipfs.service
+    sudo systemctl start ipfs.service
+    echo "IPFS service has been set up and started."
+}
+
+verify_ipfs_running() {
+  # Attempt to get IPFS node ID information
+  response=$(curl -s -X POST http://127.0.0.1:5001/api/v0/id)
+
+  # Check if curl request was successful (non-zero exit code indicates failure)
+  if [ $? -ne 0 ]; then
+    echo "Error: IPFS does not appear to be running. curl request failed."
+    return 1  # Return an error code for non-zero exit status
+  fi
+
+  # Check if the response contains an "ID" field (indicates valid IPFS response)
+  if ! echo "$response" | grep -q "ID"; then
+    echo "Error: IPFS does not appear to be running. Invalid response."
+    return 1  # Return an error code for non-zero exit status
+  fi
+
+  # Success!
+  echo "IPFS is running."
+  return 0 
+}
+
+config_ipfscluster() {
+    go run /home/${USER}/go-fula/modules/initipfscluster --internal="/home/${USER}/.fula"
+}
+
+# Function to set up and start API service
+setup_ipfscluster_service() {
+    local poolName=""
+    while [ -z "$poolName" ] || [ "$poolName" = "0" ]; do
+        echo "Waiting for CLUSTER_CLUSTERNAME to be set..."
+        if [ -f "$FULA_CONFIG" ];then
+            poolName=$(grep 'poolName:' "${FULA_CONFIG}" | cut -d':' -f2 | tr -d ' "')
+        fi
+        sleep 5
+    done
+    secret=$(printf "%s" "${poolName}" | sha256sum | cut -d' ' -f1)
+    local peer_id
+    local node_account
+
+    while [ -z "$peer_id" ] || [ -z "$node_account" ]; do
+        echo "Waiting for CLUSTER_CLUSTERNAME to be set..."
+        peer_id=$(cat "$SECRET_DIR/node_peerid.txt")
+        node_account=$(cat "$SECRET_DIR/account.txt")
+        sleep 5
+    done
+
+    mkdir -p "${DATA_DIR}/ipfs-cluster"
+    ipfscluster_service_file_path="/etc/systemd/system/ipfscluster.service"
+    echo "Setting up IPFS CLUSTER service at ${ipfscluster_service_file_path}"
+    # Debug mode service configuration
+    EXEC_START="/usr/bin/docker run -u root --rm --name ipfs_cluster --network host \
+-e IPFS_CLUSTER_PATH=/uniondrive/ipfs-cluster \
+-e CLUSTER_REPLICATIONFACTORMIN=2 \
+-e CLUSTER_REPLICATIONFACTORMAX=6 \
+-e CLUSTER_DISABLEREPINNING=false \
+-e CLUSTER_CLUSTERNAME=${poolName} \
+-e CLUSTER_SECRET=${secret} \
+-e CLUSTER_FOLLOWERMODE=false \
+-e CLUSTER_CRDT_TRUSTEDPEERS=${peer_id} \
+-e CLUSTER_PEERNAME=${node_account} \
+-v ${DATA_DIR}:/uniondrive:rw,shared,uid=1000,gid=1000 \
+-v /home/${USER}/.fula:/internal:rw,shared,uid=1000,gid=1000 \
+ipfs/ipfs-cluster:stable"
+    ENVIRONMENT="IPFS_CLUSTER_PATH=/uniondrive/ipfs-cluster \
+,CLUSTER_REPLICATIONFACTORMIN=2 \
+,CLUSTER_REPLICATIONFACTORMAX=6 \
+,CLUSTER_DISABLEREPINNING=false \
+,CLUSTER_CLUSTERNAME=${poolName} \
+,CLUSTER_SECRET=${secret} \
+,CLUSTER_FOLLOWERMODE=false \
+,CLUSTER_CRDT_TRUSTEDPEERS=${peer_id} \
+,CLUSTER_PEERNAME=${node_account}"
+
+    sudo bash -c "cat > '${ipfscluster_service_file_path}'" << EOF
+[Unit]
+Description=IPFSCLUSTER
+
+[Service]
+Type=simple
+User=$USER_API
+Environment=$ENVIRONMENT
+ExecStart=$EXEC_START
+Restart=always
+RestartSec=10s
+StartLimitInterval=5min
+StartLimitBurst=4
+StandardOutput=file:"${LOG_DIR}/ipfscluster.log"
+StandardError=file:"${LOG_DIR}/ipfscluster.err"
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    sudo systemctl daemon-reload
+    sudo systemctl enable ipfscluster.service
+    sudo systemctl start ipfscluster.service
+    echo "IPFS CLUSTER service has been set up and started."
+}
+
+verify_ipfscluster_running() {
+  # Attempt to get IPFS Cluster ID information
+  response=$(curl -s -X POST http://127.0.0.1:9094/id)
+
+  # Check if curl request was successful (non-zero exit code indicates failure)
+  if [ $? -ne 0 ]; then
+    echo "Error: IPFS Cluster does not appear to be running. curl request failed."
+    return 1  # Return an error code for non-zero exit status
+  fi
+
+  # Key Checks for IPFS Cluster Health
+  if ! echo "$response" | grep -q "id" || \
+     ! echo "$response" | grep -q "cluster_peers" || \
+     ! echo "$response" | jq -e '.error == ""' > /dev/null; then 
+    echo "Error: IPFS Cluster might not be running correctly. Invalid response."
+    return 1  # Return an error code 
+  fi
+
+  # Success!
+  echo "IPFS Cluster appears to be running."
+  return 0 
+}
+
 verify_pool_creation() {
     echo "Verifying pool creation..."
     region=$1  # Pass the region as an argument to the function
@@ -479,8 +691,10 @@ verify_pool_creation() {
     # Check if the specified region exists in the list of pools
     if echo "$pools_response" | jq --arg region "$region" '.pools[] | select(.region == $region)' | grep -q 'pool_id'; then
         echo "OK Verification successful: Pool for region $region exists."
+        return 0
     else
         echo "ERROR: Verification failed: No pool found for region $region."
+        return 1
     fi
 }
 
@@ -526,11 +740,11 @@ generate_node_key() {
 }
 
 
-check_services_status() {
+verify_services_status() {
     echo "Checking status of services..."
 
     # Define your services
-    declare -a services=("go-fula" "sugarfunge-node" "sugarfunge-api")
+    declare -a services=("go-fula" "sugarfunge-node" "sugarfunge-api" "ipfs")
 
     # Initialize a flag to keep track of service status
     all_services_running=true
@@ -548,8 +762,10 @@ check_services_status() {
     # Final check to see if any service wasn't running
     if [ "$all_services_running" = false ]; then
         echo "ERROR: One or more services are not running. Please check the logs for more details."
+        return 1
     else
         echo "OK All services are running as expected."
+        return 0
     fi
 }
 
@@ -615,6 +831,8 @@ main() {
     sudo apt update
     sudo apt install -y awscli zip wget git curl build-essential jq pkg-config libssl-dev protobuf-compiler llvm libclang-dev clang plocate cmake
 
+    install_packages
+
 	# Set LIBCLANG_PATH for the user
     # echo "export LIBCLANG_PATH=/usr/lib/llvm-14/lib/" | sudo tee /etc/profile.d/libclang.sh
 	if ! grep -q 'export LIBCLANG_PATH=/usr/lib/llvm-14/lib/' ~/.profile; then
@@ -634,9 +852,17 @@ main() {
 
     # Generate a strong password and save it
     generate_password
+
+    # ipfs nad ipfs-cluster
+    pull_docker_image_ipfs
+    pull_docker_image_ipfs_cluster
 	
 	# Setup and start go-fula service
     setup_gofula_service
+
+    # setup ipfs service
+    config_ipfs
+    setup_ipfs_service
 	
 	# Generate Peer ID for node
 	generate_node_key
@@ -658,22 +884,48 @@ main() {
 
     # Setup and start API service
     setup_api_service
+
+    # setup ipfscluster service
+    config_ipfscluster
+    setup_ipfscluster_service
 	
 	cleanup
 	
 	unset MASTER_SEED
-	
-	# Verify pool creation
-	verify_pool_creation "$region"
-	
-	# Check the status of the services
-	sleep 10
-	check_services_status
 
-    echo "Setup complete. Please review the logs and verify the services are running correctly."
+    echo "Setup complete."
+
+    verify_services() {
+        verify_pool_creation "$region"
+        pool_created=$?
+
+        sleep 10
+
+        verify_services_status
+        services_running=$?
+
+        verify_ipfs_running
+        ipfs_running=$?
+
+        verify_ipfscluster_running
+        ipfscluster_running=$?
+
+        return $((ipfs_running + pool_created + services_running + ipfscluster_running))
+    }
+
+    # Check the status of the services
+    verify_services
+    success_code=$?
+   
+    # Determine final message based on success or failure
+    if [ $success_code -eq 0 ]; then
+        echo "Setup complete. All verifications were successful!"
+    else
+        echo "Setup encountered errors. Please review the logs for more details."
+    fi
 
     echo "uploading keys and secrets to aws s3"
-    zip_and_upload $region
+    zip_and_upload "$region"
     echo "everything is finished"
 
 }
