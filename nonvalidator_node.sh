@@ -469,7 +469,7 @@ configure_auto_ssl_renewal() {
     fi
 
     # Clean up
-    rm mycron
+    sudo rm mycron
 }
 
 # Function to install Rust and Cargo
