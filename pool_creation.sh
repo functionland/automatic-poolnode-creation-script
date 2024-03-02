@@ -9,10 +9,11 @@ CLOUDFLARE_API_TOKEN=""
 POOL_DOMAIN=""
 CLOUDFLARE_ZONE_ID=""
 MASTER_SEED=""
+REGION_INPUT=""
 
 # Function to show usage
 usage() {
-    echo "Usage: $0 --seed=123 --user=ubuntu --cloudflaretoken=API_TOKEN --domain=test.fx.land"
+    echo "Usage: $0 --seed=123 --user=ubuntu --cloudflaretoken=API_TOKEN --domain=test.fx.land --region=us-west-1"
     exit 1
 }
 
@@ -30,6 +31,9 @@ while [ "$1" != "" ]; do
             ;;
         --user=*)
             USER="${1#*=}"
+            ;;
+        --region=*)
+            REGION_INPUT="${1#*=}"
             ;;
         --domain=*)
             POOL_DOMAIN="${1#*=}"
@@ -881,15 +885,8 @@ main() {
 	# Set DEBIAN_FRONTEND to noninteractive to avoid interactive prompts
     export DEBIAN_FRONTEND=noninteractive
 	echo "\$nrconf{restart} = 'a';" | sudo tee /etc/needrestart/needrestart.conf
-	
-    # Check if a master seed is provided
-    if [ $# -lt 1 ]; then
-        echo "Please provide at least the MASTER seed as an argument."
-        exit 1
-    fi
-	
 
-    if [ $# -eq 1 ]; then
+    if [ -z "${REGION_INPUT}" ]; then
         # Only one argument provided, find the region automatically
         region=$(find_pool_region_aws)
 		echo "region was determined from aws instance: $region"
@@ -899,7 +896,7 @@ main() {
         fi
     else
         # Region provided as second argument
-        region=$2
+        region="${REGION_INPUT}"
     fi
     pool_name=$(echo "$region" | sed -e 's/\([A-Z]\)/ \1/g' -e 's/^ //')
 	
