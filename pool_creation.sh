@@ -275,13 +275,13 @@ setup_and_extract_keys() {
         output=$(/home/$USER/sugarfunge-node/target/release/sugarfunge-node key generate --scheme Sr25519 --password="$(cat "$PASSWORD_FILE")" 2>&1)
         echo "$output"
         secret_phrase=$(echo "$output" | grep "Secret phrase:" | awk '{$1=$2=""; print $0}' | sed 's/^[ \t]*//;s/[ \t]*$//')
-        echo -n "$secret_phrase" > "$SECRET_DIR/secret_phrase.txt"
+        echo -n "$secret_phrase" | sudo tee "$SECRET_DIR/secret_phrase.txt" > /dev/null
 
         secret_seed=$(echo "$output" | grep "Secret seed:" | awk '{$1=$2=""; print $0}' | sed 's/^[ \t]*//;s/[ \t]*$//')
-        echo -n "$secret_seed" > "$SECRET_DIR/secret_seed.txt"
+        echo -n "$secret_seed" | sudo tee "$SECRET_DIR/secret_seed.txt" > /dev/null
 
         account=$(echo "$output" | grep "SS58 Address:" | awk '{$1=$2=""; print $0}' | sed 's/^[ \t]*//;s/[ \t]*$//')
-        echo -n "$account" > "$SECRET_DIR/account.txt"
+        echo -n "$account" | sudo tee "$SECRET_DIR/account.txt" > /dev/null
     fi
 }
 
