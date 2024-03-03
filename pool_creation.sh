@@ -328,19 +328,20 @@ After=network.target
 Type=simple
 User=$USER
 ExecStart=$USER_HOME/sugarfunge-node/target/release/sugarfunge-node \
-    --chain $USER_HOME/sugarfunge-node/customSpecRaw.json \
-    --enable-offchain-indexing true \
-    --base-path="$DATA_DIR" \
-    --keystore-path="$SECRET_DIR" \
-    --port 30334 \
-    --rpc-port 9944 \
-    --rpc-cors=all \
-    --rpc-methods=Unsafe \
-    --rpc-external \
-    --name MyNode \
-    --password-filename="$PASSWORD_FILE" \
-    --node-key=$(cat "$SECRET_DIR/node_key.txt") \
-	--bootnodes /dns4/node.functionyard.fula.network/tcp/30334/p2p/12D3KooWBeXV65svCyknCvG1yLxXVFwRxzBLqvBJnUF6W84BLugv
+--chain $USER_HOME/sugarfunge-node/customSpecRaw.json \
+--enable-offchain-indexing true \
+--base-path="$DATA_DIR" \
+--keystore-path="$SECRET_DIR" \
+--port 30334 \
+--rpc-port 9944 \
+--rpc-cors=all \
+--rpc-methods=Unsafe \
+--rpc-external \
+--name MyNode \
+--password-filename="$PASSWORD_FILE" \
+--node-key=$(cat "$SECRET_DIR/node_key.txt") \
+--validator \
+--bootnodes /dns4/node.functionyard.fula.network/tcp/30334/p2p/12D3KooWBeXV65svCyknCvG1yLxXVFwRxzBLqvBJnUF6W84BLugv
 Restart=always
 RestartSec=10s
 StartLimitInterval=5min
