@@ -326,7 +326,7 @@ After=network.target
 
 [Service]
 Type=simple
-User=$USER
+User=root
 ExecStart=$USER_HOME/sugarfunge-node/target/release/sugarfunge-node \
 --chain $USER_HOME/sugarfunge-node/customSpecRaw.json \
 --enable-offchain-indexing true \
@@ -381,7 +381,7 @@ Requires=sugarfunge-node.service
 
 [Service]
 Type=simple
-User=$USER
+User=root
 ExecStart=$USER_HOME/sugarfunge-api/target/release/sugarfunge-api \
     --db-uri="$DATA_DIR" \
     --node-server ws://127.0.0.1:9944
@@ -624,7 +624,7 @@ Description=IPFS
 
 [Service]
 Type=simple
-User=$USER_API
+User=root
 Environment=$ENVIRONMENT
 ExecStart=$EXEC_START
 Restart=always
@@ -729,7 +729,7 @@ Description=IPFSCLUSTER
 
 [Service]
 Type=simple
-User=$USER_API
+User=root
 Environment=$ENVIRONMENT
 ExecStart=$EXEC_START
 Restart=always

@@ -657,6 +657,7 @@ After=network.target
 
 [Service]
 Type=simple
+User=root
 Environment=HOME=/home/$USER
 ExecStart=/home/$USER/go-fula/go-fula --config /home/$USER/.fula/config.yaml
 Restart=always
