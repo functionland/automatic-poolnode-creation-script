@@ -10,10 +10,11 @@ POOL_DOMAIN=""
 CLOUDFLARE_ZONE_ID=""
 MASTER_SEED=""
 REGION_INPUT=""
+NODE_API_URL=""
 
 # Function to show usage
 usage() {
-    echo "Usage: $0 --seed=123 --user=ubuntu --cloudflaretoken=API_TOKEN --domain=test.fx.land --region=us-west-1"
+    echo "Usage: $0 --seed=123 --user=ubuntu --cloudflaretoken=API_TOKEN --domain=test.fx.land --region=us-west-1 --api=https://api."
     exit 1
 }
 
@@ -22,6 +23,9 @@ while [ "$1" != "" ]; do
     case $1 in
         --seed=*)
             MASTER_SEED="${1#*=}"
+            ;;
+        --api=*)
+            NODE_API_URL="${1#*=}"
             ;;
         --cloudflaretoken=*)
             CLOUDFLARE_API_TOKEN="${1#*=}"
@@ -55,6 +59,11 @@ fi
 if [ -z "$USER" ]; then
     echo "missing USER parameter."
     USER="ubuntu"
+fi
+
+if [ -z "$NODE_API_URL" ]; then
+    echo "missing NODE_API_URL parameter."
+    NODE_API_URL="https://api.node3.functionyard.fula.network"
 fi
 
 if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
@@ -467,7 +476,7 @@ fund_account() {
     account=$(cat "$SECRET_DIR/account.txt")
     
     # Make the API request and capture the HTTP status code
-    response=$(curl -s -o /dev/null -w "%{http_code}" -X POST https://api.node3.functionyard.fula.network/account/balance \
+    response=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$NODE_API_URL/account/balance" \
     -H "Content-Type: application/json" \
     -d "{\"account\": \"$account\"}")
 
@@ -477,7 +486,7 @@ fund_account() {
         secret_seed=$(cat "$SECRET_DIR/secret_seed.txt")
         
         # Fund the account
-        fund_response=$(curl -s -X POST https://api.node3.functionyard.fula.network/account/fund \
+        fund_response=$(curl -s -X POST "$NODE_API_URL/account/fund" \
         -H "Content-Type: application/json" \
         -d "{\"seed\": \"$MASTER_SEED\", \"amount\": 4000000000000000000, \"to\": \"$account\"}")
         
@@ -496,7 +505,7 @@ create_pool() {
     region=$2
 
     # Get the list of existing pools
-    pools_response=$(curl -s -X GET https://api.node3.functionyard.fula.network/fula/pool \
+    pools_response=$(curl -s -X GET "$NODE_API_URL/fula/pool" \
     -H "Content-Type: application/json")
 
     # Check if the current region exists in the list of pools
@@ -508,7 +517,7 @@ create_pool() {
         node_peerid=$(cat "$SECRET_DIR/node_peerid.txt")
 
         # Capture the HTTP status code while creating the pool
-        create_response=$(curl -s -o response.json -w "%{http_code}" -X POST https://api.node3.functionyard.fula.network/fula/pool/create \
+        create_response=$(curl -s -o response.json -w "%{http_code}" -X POST "$NODE_API_URL/fula/pool/create" \
         -H "Content-Type: application/json" \
         -d "{\"seed\": \"$seed\", \"pool_name\": \"$pool_name\", \"peer_id\": \"$node_peerid\", \"region\": \"$region\"}")
         
@@ -767,7 +776,7 @@ verify_pool_creation() {
     region=$1  # Pass the region as an argument to the function
 
     # Get the list of existing pools
-    pools_response=$(curl -s -X POST https://api.node3.functionyard.fula.network/fula/pool \
+    pools_response=$(curl -s -X POST "$NODE_API_URL/fula/pool" \
     -H "Content-Type: application/json" \
     -d "{}")
 
