@@ -289,6 +289,8 @@ setup_and_extract_keys() {
 insert_keys() {
 	echo "insert_keys"
     sudo chmod -R 775 "$SECRET_DIR"
+    sudo chmod -R 775 "$DATA_DIR"
+    sudo chmod -R 775 "$USER_HOME/sugarfunge-node"
     secret_phrase=$(cat "$SECRET_DIR/secret_phrase.txt")
     /home/$USER/sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --chain $USER_HOME/sugarfunge-node/customSpecRaw.json --scheme Sr25519 --suri "$secret_phrase" --password "$(cat "$PASSWORD_FILE")" --key-type aura
     /home/$USER/sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --chain $USER_HOME/sugarfunge-node/customSpecRaw.json --scheme Ed25519 --suri "$secret_phrase" --password "$(cat "$PASSWORD_FILE")" --key-type gran
