@@ -579,7 +579,11 @@ EOF
 }
 
 config_ipfs() {
+    cd /home/${USER}/go-fula/modules/initipfs
+    go mod init main.go
+    go mod tidy
     go run /home/${USER}/go-fula/modules/initipfs --internal="/home/${USER}/.fula" --external="/uniondrive" --defaultIpfsConfig="/home/${USER}/fula-ota/docker/fxsupport/linux/kubo/config" --apiIp="127.0.0.1"
+    cd /home/${USER}
 }
 
 # Function to set up and start IPFS service
@@ -647,7 +651,11 @@ verify_ipfs_running() {
 }
 
 config_ipfscluster() {
+    cd /home/${USER}/go-fula/modules/initipfscluster
+    go mod init main.go
+    go mod tidy
     go run /home/${USER}/go-fula/modules/initipfscluster --internal="/home/${USER}/.fula"
+    cd /home/${USER}
 }
 
 # Function to set up and start API service
@@ -965,7 +973,6 @@ main() {
     setup_ipfscluster_service
 
     # Setup domain name
-    local peer_id_for_domin
     local public_ip
     public_ip=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
     peer_id_for_domain=$(cat "$SECRET_DIR/node_peerid.txt")
