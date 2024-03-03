@@ -9,10 +9,11 @@ DOMAIN="" # Set with --domain
 VALIDATOR_SEED="" # Seed of main validator node, Set with --validator
 API_URL="https://api.node3.functionyard.fula.network"
 MINTER_ACCOUNT_SEED="" # Seed of an accountwith minter access to ocntract
+USER="ubuntu"
 
 # Function to show usage
 usage() {
-    echo "Usage: $0 --node=wss://example.com --release --domain=yourdomain.com --validator=0x2222 --minter=3b333 --api=http://127.0.0.1:4000"
+    echo "Usage: $0 --node=wss://example.com --release --domain=yourdomain.com --validator=0x2222 --minter=3b333 --api=http://127.0.0.1:4000 --user=ubuntu"
     exit 1
 }
 
@@ -33,6 +34,9 @@ while [ "$1" != "" ]; do
             ;;
         --release)
             RELEASE_FLAG="--release"
+            ;;
+        --user=*)
+            USER="${1#*=}"
             ;;
         --domain=*)
             DOMAIN="${1#*=}"
@@ -76,27 +80,27 @@ install_packages() {
 install_rust() {
     echo "Installing Rust..."
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-    source "$HOME/.cargo/env"
+    source "/home/${USER}/.cargo/env"
 }
 
 # Function to clone the fula-contract-api repository
 clone_repository() {
     if [ ! -d "fula-contract-api" ] || [ -z "$(ls -A fula-contract-api)" ]; then
         echo "Cloning the fula-contract-api repository..."
-        git clone https://github.com/functionland/fula-contract-api.git "$HOME/fula-contract-api"
+        git clone https://github.com/functionland/fula-contract-api.git "/home/${USER}/fula-contract-api"
     fi
 }
 
 # Function to set up the .env file
 setup_env_file() {
     echo "Setting up the .env file..."
-    cp "$HOME/fula-contract-api/.env.example" "$HOME/fula-contract-api/.env"
+    cp "/home/${USER}/fula-contract-api/.env.example" "/home/${USER}/fula-contract-api/.env"
 }
 
 # Function to build the project
 build_project() {
     echo "Building the fula-contract-api project..."
-    cd "$HOME/fula-contract-api"
+    cd "/home/${USER}/fula-contract-api"
     if [ ! -z "$RELEASE_FLAG" ]; then
         cargo build --release
     else
@@ -141,8 +145,8 @@ setup_service() {
         BUILD_TYPE="release"
     fi
 
-    sudo cp $HOME/fula-contract-api/.env.example $HOME/fula-contract-api/.env
-    sed -i "s/^ACCOUNT_PRIVATE_KEY=\".*\"/ACCOUNT_PRIVATE_KEY=\"$MINTER_ACCOUNT_SEED\"/" "$HOME/fula-contract-api/.env"
+    sudo cp "/home/${USER}/fula-contract-api/.env.example" "/home/${USER}/fula-contract-api/.env"
+    sed -i "s/^ACCOUNT_PRIVATE_KEY=\".*\"/ACCOUNT_PRIVATE_KEY=\"$MINTER_ACCOUNT_SEED\"/" "/home/${USER}/fula-contract-api/.env"
 
     SERVICE_FILE="/etc/systemd/system/fula-contract-api.service"
     echo "Creating the service file at $SERVICE_FILE..."
@@ -152,14 +156,14 @@ setup_service() {
 Description=Fula Contract API
 
 # Load environment variables from the .env file
-EnvironmentFile=$HOME/fula-contract-api/.env
+EnvironmentFile=/home/${USER}/fula-contract-api/.env
 
 [Service]
 TimeoutStartSec=0
 Type=simple
 User=root
-EnvironmentFile=$HOME/fula-contract-api/.env
-ExecStart=$HOME/fula-contract-api/target/$BUILD_TYPE/functionland-contract-api --node-server=$NODE_SERVER_WS --validator-seed $VALIDATOR_SEED --listen http://127.0.0.1:4001
+EnvironmentFile=/home/${USER}/fula-contract-api/.env
+ExecStart=/home/${USER}/fula-contract-api/target/$BUILD_TYPE/functionland-contract-api --node-server=$NODE_SERVER_WS --validator-seed $VALIDATOR_SEED --listen http://127.0.0.1:4001
 Restart=always
 RestartSec=10s
 StartLimitInterval=5min
