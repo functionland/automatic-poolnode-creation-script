@@ -346,8 +346,8 @@ Restart=always
 RestartSec=10s
 StartLimitInterval=5min
 StartLimitBurst=4
-StandardOutput=file:"$LOG_DIR/MyNode.log"
-StandardError=file:"$LOG_DIR/MyNode.err"
+StandardOutput=file:$LOG_DIR/MyNode.log
+StandardError=file:$LOG_DIR/MyNode.err
 
 [Install]
 WantedBy=multi-user.target
@@ -399,8 +399,8 @@ Restart=always
 RestartSec=10s
 StartLimitInterval=5min
 StartLimitBurst=4
-StandardOutput=file:"$LOG_DIR/MyNodeAPI.log"
-StandardError=file:"$LOG_DIR/MyNodeAPI.err"
+StandardOutput=file:$LOG_DIR/MyNodeAPI.log
+StandardError=file:$LOG_DIR/MyNodeAPI.err
 
 [Install]
 WantedBy=multi-user.target
@@ -613,7 +613,7 @@ setup_ipfs_service() {
 -v ${DATA_DIR}/ipfs_staging:/export:rw,shared,uid=1000,gid=1000 \
 -v ${DATA_DIR}:/uniondrive:rw,shared,uid=1000,gid=1000 \
 -v /home/${USER}/.fula:/internal:rw,shared,uid=1000,gid=1000 \
--v /home/${USER}/fula-ota/docker/fxsupport/linux/kubo:/container-init.d:rw,shared,uid=1000,gid=1000
+-v /home/${USER}/fula-ota/docker/fxsupport/linux/kubo:/container-init.d:rw,shared,uid=1000,gid=1000 \
 ipfs/kubo:master-latest"
     ENVIRONMENT="IPFS_PROFILE=badgerds \
 ,IPFS_PATH=/internal/ipfs_data"
@@ -631,8 +631,8 @@ Restart=always
 RestartSec=10s
 StartLimitInterval=5min
 StartLimitBurst=4
-StandardOutput=file:"${LOG_DIR}/ipfs.log"
-StandardError=file:"${LOG_DIR}/ipfs.err"
+StandardOutput=file:${LOG_DIR}/ipfs.log
+StandardError=file:${LOG_DIR}/ipfs.err
 
 [Install]
 WantedBy=multi-user.target
@@ -736,8 +736,8 @@ Restart=always
 RestartSec=10s
 StartLimitInterval=5min
 StartLimitBurst=4
-StandardOutput=file:"${LOG_DIR}/ipfscluster.log"
-StandardError=file:"${LOG_DIR}/ipfscluster.err"
+StandardOutput=file:${LOG_DIR}/ipfscluster.log
+StandardError=file:${LOG_DIR}/ipfscluster.err
 
 [Install]
 WantedBy=multi-user.target
