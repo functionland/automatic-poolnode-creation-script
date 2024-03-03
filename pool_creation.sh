@@ -300,6 +300,8 @@ insert_keys() {
     sudo chmod -R 775 "$SECRET_DIR"
     sudo chmod -R 775 "$DATA_DIR"
     sudo chmod -R 775 "$USER_HOME/sugarfunge-node"
+    sudo chown -R ubuntu:ubuntu "$DATA_DIR"
+    sudo chown -R ubuntu:ubuntu "$USER_HOME/sugarfunge-node"
     secret_phrase=$(cat "$SECRET_DIR/secret_phrase.txt")
     sudo /home/$USER/sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --chain $USER_HOME/sugarfunge-node/customSpecRaw.json --scheme Sr25519 --suri "$secret_phrase" --password "$(cat "$PASSWORD_FILE")" --key-type aura
     sudo /home/$USER/sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --chain $USER_HOME/sugarfunge-node/customSpecRaw.json --scheme Ed25519 --suri "$secret_phrase" --password "$(cat "$PASSWORD_FILE")" --key-type gran
@@ -606,6 +608,7 @@ setup_ipfs_service() {
     sudo mkdir -p "/home/${USER}/.fula/ipfs_data"
     ipfs_service_file_path="/etc/systemd/system/ipfs.service"
     echo "Setting up IPFS service at ${ipfs_service_file_path}"
+    sudo touch /home/${USER}/.fula/.ipfs_setup
     # Debug mode service configuration
     EXEC_START="/usr/bin/docker run -u root --rm --name ipfs_host --network host \
 -e IPFS_PROFILE=badgerds \
@@ -698,6 +701,7 @@ setup_ipfscluster_service() {
 
     sudo mkdir -p "${DATA_DIR}/ipfs-cluster"
     ipfscluster_service_file_path="/etc/systemd/system/ipfscluster.service"
+    sudo touch /home/${USER}/.fula/.ipfscluster_setup
     echo "Setting up IPFS CLUSTER service at ${ipfscluster_service_file_path}"
     # Debug mode service configuration
     EXEC_START="/usr/bin/docker run -u root --rm --name ipfs_cluster --network host \
