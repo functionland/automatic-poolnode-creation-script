@@ -610,10 +610,10 @@ setup_ipfs_service() {
     EXEC_START="/usr/bin/docker run -u root --rm --name ipfs_host --network host \
 -e IPFS_PROFILE=badgerds \
 -e IPFS_PATH=/internal/ipfs_data \
--v ${DATA_DIR}/ipfs_staging:/export:rw,shared,uid=1000,gid=1000 \
--v ${DATA_DIR}:/uniondrive:rw,shared,uid=1000,gid=1000 \
--v /home/${USER}/.fula:/internal:rw,shared,uid=1000,gid=1000 \
--v /home/${USER}/fula-ota/docker/fxsupport/linux/kubo:/container-init.d:rw,shared,uid=1000,gid=1000 \
+-v ${DATA_DIR}/ipfs_staging:/export:rw,shared \
+-v ${DATA_DIR}:/uniondrive:rw,shared \
+-v /home/${USER}/.fula:/internal:rw,shared \
+-v /home/${USER}/fula-ota/docker/fxsupport/linux/kubo:/container-init.d:rw,shared \
 ipfs/kubo:master-latest"
     ENVIRONMENT="IPFS_PROFILE=badgerds \
 ,IPFS_PATH=/internal/ipfs_data"
@@ -710,8 +710,8 @@ setup_ipfscluster_service() {
 -e CLUSTER_FOLLOWERMODE=false \
 -e CLUSTER_CRDT_TRUSTEDPEERS=${peer_id} \
 -e CLUSTER_PEERNAME=${node_account} \
--v ${DATA_DIR}:/uniondrive:rw,shared,uid=1000,gid=1000 \
--v /home/${USER}/.fula:/internal:rw,shared,uid=1000,gid=1000 \
+-v ${DATA_DIR}:/uniondrive:rw,shared \
+-v /home/${USER}/.fula:/internal:rw,shared \
 ipfs/ipfs-cluster:stable"
     ENVIRONMENT="IPFS_CLUSTER_PATH=/uniondrive/ipfs-cluster \
 ,CLUSTER_REPLICATIONFACTORMIN=2 \
