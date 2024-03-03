@@ -208,6 +208,7 @@ createNeededAssetClasses() {
         "class_id": 120,
         "owner": "'$OWNER'"
     }'
+    echo "Created CLAIM_TOKEN_CLASS"
 
     # Create CHALLENGE_TOKEN_CLASS
     curl -X POST "$API_URL/asset/create_class" -H "Content-Type: application/json" -d '{
@@ -218,6 +219,7 @@ createNeededAssetClasses() {
         "class_id": 110,
         "owner": "'$OWNER'"
     }'
+    echo "Created CHALLENGE_TOKEN_CLASS"
 
     # Create LABOR_TOKEN_CLASS
     curl -X POST "$API_URL/asset/create_class" -H "Content-Type: application/json" -d '{
@@ -228,6 +230,7 @@ createNeededAssetClasses() {
         "class_id": 100,
         "owner": "'$OWNER'"
     }'
+    echo "Created LABOR_TOKEN_CLASS"
 
     # Create tokens for each class
     for class_id in 100 110 120; do
@@ -249,6 +252,7 @@ createNeededAssetClasses() {
                 "token_name": "'$token_name'"
             }
         }'
+        echo "Created $token_name token"
     done
 
     echo "Asset classes and tokens created."
