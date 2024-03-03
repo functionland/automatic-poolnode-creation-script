@@ -212,7 +212,7 @@ pull_docker_image_ipfs() {
     sudo docker pull ipfs/kubo:master-latest
 
     # Check if the image was pulled successfully
-    if sudo docker images | grep -q 'ipfs/kubo:master-latest'; then
+    if sudo docker images | grep -q 'ipfs/kubo'; then
         echo "Docker image kubo pulled successfully."
     else
         echo "Error: Docker image kubo pull failed."
@@ -226,7 +226,7 @@ pull_docker_image_ipfs_cluster() {
     sudo docker pull ipfs/ipfs-cluster:stable
 
     # Check if the image was pulled successfully
-    if sudo docker images | grep -q 'ipfs/ipfs-cluster:stable'; then
+    if sudo docker images | grep -q 'ipfs/ipfs-cluster'; then
         echo "Docker image ipfs-cluster pulled successfully."
     else
         echo "Error: Docker image ipfs-cluster pull failed."
