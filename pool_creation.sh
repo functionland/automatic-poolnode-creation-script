@@ -908,6 +908,11 @@ create_cloudflare_dns_record() {
        --data "{\"type\":\"A\",\"name\":\"${dns_record}\",\"content\":\"${public_ip}\",\"ttl\":120,\"proxied\":false}"
 }
 
+get_public_addr() {
+# Function to get the AWS Region
+    local token=$1
+    echo $(curl -H "X-aws-ec2-metadata-token: $token" http://169.254.169.254/latest/meta-data/public-ipv4 -s)
+}
 
 # Main script execution
 main() {
@@ -995,6 +1000,9 @@ main() {
 
     # Setup domain name
     local public_ip
+    aws_token=$(get_aws_token)
+    public_ip=$(get_public_addr $aws_token)
+
     public_ip=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
     peer_id_for_domain=$(cat "$SECRET_DIR/node_peerid.txt")
     create_cloudflare_dns_record "$peer_id_for_domain" "$public_ip"
