@@ -194,7 +194,7 @@ check_service() {
 }
 
 createNeededAssetClasses() {
-    echo "Creating asset classes..."
+    echo "Creating asset classes $API_URL..."
 
     # Define the owner
     OWNER="5CcHZucP2u1FXQW9wuyC11vAVxB3c48pUhc5cc9b3oxbKPL2"
