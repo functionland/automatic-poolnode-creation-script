@@ -791,7 +791,7 @@ generate_node_key() {
         
         # Check if the node_key file exists and has different content
         if [ ! -f "$SECRET_DIR/node_key.txt" ] || [ "$new_key" != "$(cat $SECRET_DIR/node_key.txt)" ]; then
-            echo -n "$new_key" > "$SECRET_DIR/node_key.txt"
+            echo -n "$new_key" | sudo tee "$SECRET_DIR/node_key.txt" > /dev/null
             echo "Node key saved to $SECRET_DIR/node_key.txt"
         else
             echo "Node key file already exists and is up to date."
