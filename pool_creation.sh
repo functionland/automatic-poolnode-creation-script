@@ -580,7 +580,9 @@ EOF
 
 config_ipfs() {
     cd /home/${USER}/go-fula/modules/initipfs
-    go mod init main.go
+    if [ ! -f "/home/${USER}/go-fula/modules/initipfs/go.mod" ]; then
+        go mod init main.go
+    fi
     go mod tidy
     go run /home/${USER}/go-fula/modules/initipfs --internal="/home/${USER}/.fula" --external="/uniondrive" --defaultIpfsConfig="/home/${USER}/fula-ota/docker/fxsupport/linux/kubo/config" --apiIp="127.0.0.1"
     cd /home/${USER}
@@ -652,7 +654,9 @@ verify_ipfs_running() {
 
 config_ipfscluster() {
     cd /home/${USER}/go-fula/modules/initipfscluster
-    go mod init main.go
+    if [ ! -f "/home/${USER}/go-fula/modules/initipfscluster/go.mod" ]; then
+        go mod init main.go
+    fi
     go mod tidy
     go run /home/${USER}/go-fula/modules/initipfscluster --internal="/home/${USER}/.fula"
     cd /home/${USER}
