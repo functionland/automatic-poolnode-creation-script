@@ -11,6 +11,7 @@ CLOUDFLARE_ZONE_ID=""
 MASTER_SEED=""
 REGION_INPUT=""
 NODE_API_URL=""
+POOL_ID=""
 
 # Function to show usage
 usage() {
@@ -525,16 +526,16 @@ create_pool() {
         -d "{\"seed\": \"$seed\", \"pool_name\": \"$pool_name\", \"peer_id\": \"$node_peerid\", \"region\": \"$region\"}")
         
         # Extract the pool_id from the response
-        pool_id=$(jq '.pool_id' < response.json)
+        POOL_ID=$(jq '.pool_id' < response.json)
         rm response.json  # Clean up the temporary file
 
         # Check if the pool was created successfully (HTTP status 200) and pool_id is not null
-        if [[ $create_response == 200 ]] && [[ $pool_id != null ]]; then
-            echo "Created Pool ID: $pool_id"
+        if [[ $create_response == 200 ]] && [[ $POOL_ID != null ]]; then
+            echo "Created Pool ID: $POOL_ID"
             # Update the Fula config file with the pool ID
-            setup_fula_config "$pool_id"
+            setup_fula_config "$POOL_ID"
         else
-            echo "Failed to create the pool for region $region. HTTP Status: $create_response, Pool ID: $pool_id"
+            echo "Failed to create the pool for region $region. HTTP Status: $create_response, Pool ID: $POOL_ID"
         fi
     fi
 }
@@ -542,7 +543,7 @@ create_pool() {
 # Function to setup the Fula config file
 setup_fula_config() {
     echo "Setting up Fula config..."
-    pool_id="$1"
+    local pool_id="$1"
     config_path="/home/$USER/.fula/config.yaml"
 
     # Check if the Fula config file already exists
@@ -562,9 +563,8 @@ listenAddrs:
     - /ip4/0.0.0.0/udp/40001/quic
     - /ip4/0.0.0.0/udp/40001/quic-v1
     - /ip4/0.0.0.0/udp/40001/quic-v1/webtransport
-authorizer: 12D3KooWRTzN7HfmjoUBHokyRZuKdyohVVSGqKBMF24ZC3tGK78Q
-authorizedPeers:
-    - 12D3KooWRTzN7HfmjoUBHokyRZuKdyohVVSGqKBMF24ZC3tGK78Q
+authorizer: 
+authorizedPeers: []
 staticRelays:
     - /dns/relay.dev.fx.land/tcp/4001/p2p/12D3KooWDRrBaAfPwsGJivBoUw5fE7ZpDiyfUjqgiURq2DEcL835
     - /dns/alpha-relay.dev.fx.land/tcp/4001/p2p/12D3KooWFLhr8j6LTF7QV1oGCn3DVNTs1eMz2u4KCDX6Hw3BFyag
@@ -895,11 +895,11 @@ zip_and_upload() {
 }
 
 create_cloudflare_dns_record() {
-  peer_id="$1"
+  local pool_id="$1"
   public_ip="$2"
 
   # Construct the DNS record name
-  dns_record="${peer_id}.${POOL_DOMAIN}"
+  dns_record="${pool_id}.pools.${POOL_DOMAIN}"
 
   # Create DNS A Record using Cloudflare API
   curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records" \
@@ -1001,11 +1001,10 @@ main() {
     # Setup domain name
     local public_ip
     aws_token=$(get_aws_token)
-    public_ip=$(get_public_addr $aws_token)
+    public_ip=$(get_public_addr "$aws_token")
 
     public_ip=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
-    peer_id_for_domain=$(cat "$SECRET_DIR/node_peerid.txt")
-    create_cloudflare_dns_record "$peer_id_for_domain" "$public_ip"
+    create_cloudflare_dns_record "$POOL_ID" "$public_ip"
 	
 	cleanup
 
