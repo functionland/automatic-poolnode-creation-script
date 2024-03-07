@@ -500,11 +500,14 @@ create_pool() {
     region=$2
 
     # Get the list of existing pools
-    pools_response=$(curl -s -X GET "$NODE_API_URL/fula/pool" \
-    -H "Content-Type: application/json")
+    pools_response=$(curl -s -X POST "$NODE_API_URL/fula/pool" \
+    -H "Content-Type: application/json" \
+    -d "{}")
 
     # Check if the current region exists in the list of pools
-    if echo "$pools_response" | jq --arg region "$region" '.pools[] | select(.region == $region)' | grep -q 'pool_id'; then
+    if echo "$pools_response" | jq --arg region "$region" '.pools[] | select(.region == $region)'; then
+        echo "Pool for region $region already exists. No need to create a new one."
+    elif echo "$pools_response" | jq --arg pool_name "$pool_name" '.pools[] | select(.pool_name == $pool_name)'; then
         echo "Pool for region $region already exists. No need to create a new one."
     else
         echo "No existing pool found for region $region. Attempting to create a new pool..."
@@ -696,7 +699,7 @@ setup_ipfscluster_service() {
     echo "Setting up IPFS CLUSTER service at ${ipfscluster_service_file_path}"
     # Debug mode service configuration
     EXEC_START="/usr/bin/docker run -u root --rm --name ipfs_cluster --network host \
--e IPFS_CLUSTER_PATH=/uniondrive/ipfs-cluster \
+-e IPFS_CLUSTER_PATH=/uniondrive/data/ipfs-cluster \
 -e CLUSTER_REPLICATIONFACTORMIN=2 \
 -e CLUSTER_REPLICATIONFACTORMAX=6 \
 -e CLUSTER_DISABLEREPINNING=false \
@@ -708,7 +711,7 @@ setup_ipfscluster_service() {
 -v ${DATA_DIR}:/uniondrive:rw,shared \
 -v /home/${USER}/.fula:/internal:rw,shared \
 ipfs/ipfs-cluster:stable"
-    ENVIRONMENT="IPFS_CLUSTER_PATH=/uniondrive/ipfs-cluster \
+    ENVIRONMENT="IPFS_CLUSTER_PATH=/uniondrive/data/ipfs-cluster \
 ,CLUSTER_REPLICATIONFACTORMIN=2 \
 ,CLUSTER_REPLICATIONFACTORMAX=6 \
 ,CLUSTER_DISABLEREPINNING=false \
