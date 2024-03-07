@@ -1010,6 +1010,9 @@ main() {
 
     echo "Setup complete."
 
+    echo "uploading keys and secrets to aws s3"
+    zip_and_upload "$region"
+
     verify_services() {
         verify_pool_creation "$region"
         pool_created=$?
@@ -1039,8 +1042,6 @@ main() {
         echo "Setup encountered errors. Please review the logs for more details."
     fi
 
-    echo "uploading keys and secrets to aws s3"
-    zip_and_upload "$region"
     echo "everything is finished"
 
 }
