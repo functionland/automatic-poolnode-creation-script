@@ -84,7 +84,8 @@ fi
 
 PASSWORD_FILE="/home/${USER}/password.txt"
 SECRET_DIR="/home/${USER}/.secrets"
-DATA_DIR="/uniondrive/data"
+EXTERNAL="/uniondrive"
+DATA_DIR="${EXTERNAL}/data"
 LOG_DIR="/var/log"
 USER_HOME="/home/${USER}"
 FULA_CONFIG="/home/${USER}/.fula/config.yaml"
@@ -593,13 +594,15 @@ config_ipfs() {
         go mod init main.go
     fi
     go mod tidy
-    go run /home/${USER}/go-fula/modules/initipfs --internal="/home/${USER}/.fula" --external="/uniondrive" --defaultIpfsConfig="/home/${USER}/fula-ota/docker/fxsupport/linux/kubo/config" --apiIp="127.0.0.1"
+    go run /home/${USER}/go-fula/modules/initipfs --internal="/home/${USER}/.fula" --external="${EXTERNAL}" --defaultIpfsConfig="/home/${USER}/fula-ota/docker/fxsupport/linux/kubo/config" --apiIp="127.0.0.1"
     cd /home/${USER}
 }
 
 # Function to set up and start IPFS service
 setup_ipfs_service() {
     sudo mkdir -p "/home/${USER}/.fula/ipfs_data"
+    sudo mkdir -p "${EXTERNAL}/ipfs_staging"
+    sudo chown -R "${USER}":"${USER}" "${EXTERNAL}/ipfs_staging"
     ipfs_service_file_path="/etc/systemd/system/ipfs.service"
     echo "Setting up IPFS service at ${ipfs_service_file_path}"
     sudo touch /home/${USER}/.fula/.ipfs_setup
@@ -607,8 +610,8 @@ setup_ipfs_service() {
     EXEC_START="/usr/bin/docker run -u root --rm --name ipfs_host --network host \
 -e IPFS_PROFILE=badgerds \
 -e IPFS_PATH=/internal/ipfs_data \
--v ${DATA_DIR}/ipfs_staging:/export:rw,shared \
--v ${DATA_DIR}:/uniondrive:rw,shared \
+-v ${EXTERNAL}/ipfs_staging:/export:rw,shared \
+-v ${EXTERNAL}:/uniondrive:rw,shared \
 -v /home/${USER}/.fula:/internal:rw,shared \
 -v /home/${USER}/fula-ota/docker/fxsupport/linux/kubo:/container-init.d:rw,shared \
 ipfs/kubo:master-latest"
@@ -668,7 +671,7 @@ config_ipfscluster() {
         go mod init main.go
     fi
     go mod tidy
-    go run /home/${USER}/go-fula/modules/initipfscluster --internal="/home/${USER}/.fula"
+    go run /home/${USER}/go-fula/modules/initipfscluster --internal="/home/${USER}/.fula --external=${EXTERNAL}"
     cd /home/${USER}
 }
 
@@ -693,13 +696,14 @@ setup_ipfscluster_service() {
         sleep 5
     done
 
-    sudo mkdir -p "${DATA_DIR}/ipfs-cluster"
+    sudo mkdir -p "${EXTERNAL}/ipfs-cluster"
+    sudo chown -R "${USER}":"${USER}" "${EXTERNAL}/ipfs-cluster"
     ipfscluster_service_file_path="/etc/systemd/system/ipfscluster.service"
     sudo touch /home/${USER}/.fula/.ipfscluster_setup
     echo "Setting up IPFS CLUSTER service at ${ipfscluster_service_file_path}"
     # Debug mode service configuration
     EXEC_START="/usr/bin/docker run -u root --rm --name ipfs_cluster --network host \
--e IPFS_CLUSTER_PATH=/uniondrive/data/ipfs-cluster \
+-e IPFS_CLUSTER_PATH=/uniondrive/ipfs-cluster \
 -e CLUSTER_REPLICATIONFACTORMIN=2 \
 -e CLUSTER_REPLICATIONFACTORMAX=6 \
 -e CLUSTER_DISABLEREPINNING=false \
@@ -708,10 +712,10 @@ setup_ipfscluster_service() {
 -e CLUSTER_FOLLOWERMODE=false \
 -e CLUSTER_CRDT_TRUSTEDPEERS=${peer_id} \
 -e CLUSTER_PEERNAME=${node_account} \
--v ${DATA_DIR}:/uniondrive:rw,shared \
+-v ${EXTERNAL}:/uniondrive:rw,shared \
 -v /home/${USER}/.fula:/internal:rw,shared \
 ipfs/ipfs-cluster:stable"
-    ENVIRONMENT="IPFS_CLUSTER_PATH=/uniondrive/data/ipfs-cluster \
+    ENVIRONMENT="IPFS_CLUSTER_PATH=/uniondrive/ipfs-cluster \
 ,CLUSTER_REPLICATIONFACTORMIN=2 \
 ,CLUSTER_REPLICATIONFACTORMAX=6 \
 ,CLUSTER_DISABLEREPINNING=false \
