@@ -114,11 +114,24 @@ get_aws_region() {
 
 install_packages() {
     sudo apt-get update -qq
-    # Assuming this script is run on Debian/Ubuntu; Adjust as needed for other distributions
-    sudo apt-get install -y google-cloud-sdk docker.io nginx software-properties-common certbot python3-certbot-nginx
+    sudo apt-get install -y docker.io nginx software-properties-common certbot python3-certbot-nginx
     sudo apt-get install -y wget git curl build-essential jq pkg-config libssl-dev protobuf-compiler llvm libclang-dev clang plocate cmake
     sudo systemctl start docker
     sudo systemctl enable docker
+
+    # Install Google Cloud SDK
+    echo "Adding the Cloud SDK distribution URI as a package source..."
+    echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+
+    echo "Importing the Google Cloud public key..."
+    curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
+
+    echo "Updating the package list and installing the Google Cloud SDK..."
+    sudo apt-get update -qq
+    sudo apt-get install -y google-cloud-sdk
+
+    # Additional SDK components can be installed as needed. For example:
+    # sudo apt-get install -y google-cloud-sdk-app-engine-python google-cloud-sdk-app-engine-python-extras
 }
 
 # Main function to find pool region on aws
