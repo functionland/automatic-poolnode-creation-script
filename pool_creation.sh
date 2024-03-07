@@ -680,7 +680,7 @@ config_ipfscluster() {
         go mod init main.go
     fi
     go mod tidy
-    go run /home/${USER}/go-fula/modules/initipfscluster --internal="/home/${USER}/.fula --external=${EXTERNAL}"
+    go run /home/${USER}/go-fula/modules/initipfscluster --internal="/home/${USER}/.fula" --external="${EXTERNAL}"
     cd /home/${USER}
 }
 
