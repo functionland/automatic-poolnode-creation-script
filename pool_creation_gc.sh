@@ -670,6 +670,8 @@ config_ipfscluster() {
     if [ ! -f "/home/${USER}/go-fula/modules/initipfscluster/go.mod" ]; then
         go mod init main.go
     fi
+    sudo mkdir -p "${EXTERNAL}/ipfs-cluster"
+    sudo chown -R "${USER}":"${USER}" "${EXTERNAL}/ipfs-cluster"
     go mod tidy
     go run /home/${USER}/go-fula/modules/initipfscluster --internal="/home/${USER}/.fula" --external="${EXTERNAL}"
     cd /home/${USER}
@@ -696,8 +698,6 @@ setup_ipfscluster_service() {
         sleep 5
     done
 
-    sudo mkdir -p "${EXTERNAL}/ipfs-cluster"
-    sudo chown -R "${USER}":"${USER}" "${EXTERNAL}/ipfs-cluster"
     ipfscluster_service_file_path="/etc/systemd/system/ipfscluster.service"
     sudo touch /home/${USER}/.fula/.ipfscluster_setup
     echo "Setting up IPFS CLUSTER service at ${ipfscluster_service_file_path}"
