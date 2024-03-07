@@ -557,7 +557,7 @@ listenAddrs:
     - /ip4/0.0.0.0/udp/40001/quic
     - /ip4/0.0.0.0/udp/40001/quic-v1
     - /ip4/0.0.0.0/udp/40001/quic-v1/webtransport
-authorizer: 
+authorizer: "$(cat ${SECRET_DIR}/node_peerid.txt)"
 authorizedPeers: []
 staticRelays:
     - /dns/relay.dev.fx.land/tcp/4001/p2p/12D3KooWDRrBaAfPwsGJivBoUw5fE7ZpDiyfUjqgiURq2DEcL835
