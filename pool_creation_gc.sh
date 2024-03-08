@@ -104,6 +104,7 @@ get_region_name() {
     local aws_region=$1
     case $aws_region in
         us-central1) echo "UsEastOhio" ;;
+        europe-west1) echo "EuropeIreland" ;;
         *) echo "" ;;
     esac
 }
