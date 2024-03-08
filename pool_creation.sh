@@ -524,12 +524,12 @@ create_pool() {
     -d "{}")
 
     # Check if the current region exists in the list of pools
-    if echo "$pools_response" | jq --arg region "$region" '.pools[] | select(.region == $region) | .pool_id'; then
+    if echo "$pools_response" | jq --arg region "$region" '.pools[] | select(.region == $region) | .pool_id' | grep -q .; then
         POOL_ID=$(echo "$pools_response" | jq --arg region "$region" '.pools[] | select(.region == $region) | .pool_id')
         echo "Pool for region $region already exists. No need to create a new one."
-    elif echo "$pools_response" | jq --arg pool_name "$pool_name" '.pools[] | select(.pool_name == $pool_name) | .pool_id'; then
+    elif echo "$pools_response" | jq --arg pool_name "$pool_name" '.pools[] | select(.pool_name == $pool_name) | .pool_id' | grep -q .; then
         POOL_ID=$(echo "$pools_response" | jq --arg pool_name "$pool_name" '.pools[] | select(.pool_name == $pool_name) | .pool_id')
-        echo "Pool for region $region already exists. No need to create a new one."
+        echo "Pool for pool_name $pool_name already exists. No need to create a new one."
     else
         echo "No existing pool found for region $region. Attempting to create a new pool..."
         seed=$(cat "$SECRET_DIR/secret_seed.txt")
