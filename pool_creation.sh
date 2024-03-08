@@ -254,6 +254,34 @@ pull_docker_image_ipfs_cluster() {
     fi
 }
 
+# Function to pull the required Docker image and verify
+pull_docker_image_node() {
+    echo "Pulling the required Docker image node..."
+    sudo docker pull functionland/sugarfunge-node:amd64-latest
+
+    # Check if the image was pulled successfully
+    if sudo docker images | grep -q 'functionland/sugarfunge-node'; then
+        echo "Docker image node pulled successfully."
+    else
+        echo "Error: Docker image node pull failed."
+        exit 1
+    fi
+}
+
+# Function to pull the required Docker image and verify
+pull_docker_image_api() {
+    echo "Pulling the required Docker image api..."
+    sudo docker pull functionland/sugarfunge-api:amd64-latest
+
+    # Check if the image was pulled successfully
+    if sudo docker images | grep -q 'functionland/sugarfunge-api'; then
+        echo "Docker image api pulled successfully."
+    else
+        echo "Error: Docker image api pull failed."
+        exit 1
+    fi
+}
+
 # Function to clone and build repositories
 clone_and_build() {
 	echo "Installing sugarfunge-api"
@@ -340,27 +368,33 @@ After=network.target
 [Service]
 Type=simple
 User=root
-ExecStart=$USER_HOME/sugarfunge-node/target/release/sugarfunge-node \
---chain $USER_HOME/sugarfunge-node/customSpecRaw.json \
+ExecStart=/usr/bin/docker run \
+-u root --rm --name PoolNode --network host \
+-v "$PASSWORD_FILE":/password.txt \
+-v "$SECRET_DIR":/keys \
+-v $DATA_DIR:/data \
+functionland/sugarfunge-node:amd64-latest \
+--chain /customSpecRaw.json \
 --enable-offchain-indexing true \
---base-path="$DATA_DIR" \
---keystore-path="$SECRET_DIR" \
+--base-path=/data \
+--keystore-path=/keys \
+--password-filename=/password.txt \
 --port 30334 \
 --rpc-port 9944 \
 --rpc-cors=all \
 --rpc-methods=Unsafe \
 --rpc-external \
---name MyNode \
---password-filename="$PASSWORD_FILE" \
+--name PoolNode \
 --node-key=$(cat "$SECRET_DIR/node_key.txt") \
 --validator \
+--pruning archive \
 --bootnodes /dns4/node.functionyard.fula.network/tcp/30334/p2p/12D3KooWBeXV65svCyknCvG1yLxXVFwRxzBLqvBJnUF6W84BLugv
 Restart=always
 RestartSec=10s
 StartLimitInterval=5min
 StartLimitBurst=4
-StandardOutput=file:$LOG_DIR/MyNode.log
-StandardError=file:$LOG_DIR/MyNode.err
+StandardOutput=file:$LOG_DIR/PoolNode.log
+StandardError=file:$LOG_DIR/PoolNode.err
 
 [Install]
 WantedBy=multi-user.target
@@ -395,19 +429,22 @@ Requires=sugarfunge-node.service
 [Service]
 Type=simple
 User=root
-ExecStart=$USER_HOME/sugarfunge-api/target/release/sugarfunge-api \
-    --db-uri="$DATA_DIR" \
-    --node-server ws://127.0.0.1:9944
-Environment=FULA_SUGARFUNGE_API_HOST=http://127.0.0.1:4000 \
-            FULA_CONTRACT_API_HOST=https://contract-api.functionyard.fula.network \
-            LABOR_TOKEN_CLASS_ID=100 \
-            LABOR_TOKEN_ASSET_ID=100 \
-            CHALLENGE_TOKEN_CLASS_ID=110 \
-            CHALLENGE_TOKEN_ASSET_ID=100 \
-            LABOR_TOKEN_VALUE=1 \
-            CHALLENGE_TOKEN_VALUE=1 \
-            CLAIMED_TOKEN_CLASS_ID=120 \
-            CLAIMED_TOKEN_ASSET_ID=100
+ExecStart=/usr/bin/docker run -u root --rm --name PoolAPI --network host \
+-v /home/$USER/sugarfunge-api/.env:/.env \
+-v $DATA_DIR:/data \
+-e FULA_SUGARFUNGE_API_HOST=http://127.0.0.1:4000 \
+-e FULA_CONTRACT_API_HOST=https://contract-api.functionyard.fula.network \
+-e LABOR_TOKEN_CLASS_ID=100 \
+-e LABOR_TOKEN_ASSET_ID=100 \
+-e CHALLENGE_TOKEN_CLASS_ID=110 \
+-e CHALLENGE_TOKEN_ASSET_ID=100 \
+-e LABOR_TOKEN_VALUE=1 \
+-e CHALLENGE_TOKEN_VALUE=1 \
+-e CLAIMED_TOKEN_CLASS_ID=120 \
+-e CLAIMED_TOKEN_ASSET_ID=100 \
+functionland/sugarfunge-api:amd64-latest \
+--db-uri=/data \
+--node-server ws://127.0.0.1:9944
 Restart=always
 RestartSec=10s
 StartLimitInterval=5min
@@ -979,6 +1016,13 @@ main() {
 
     # Generate a strong password and save it
     generate_password
+
+    # Pull the required Docker image and verify
+    echo "Pulling required docker image for node"
+    pull_docker_image_node
+
+    echo "Pulling required docker image for api"
+    pull_docker_image_api
 
     # ipfs nad ipfs-cluster
     pull_docker_image_ipfs
