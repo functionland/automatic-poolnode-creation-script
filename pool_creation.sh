@@ -93,7 +93,7 @@ FULA_CONFIG="/home/${USER}/.fula/config.yaml"
 sudo mkdir -p "${EXTERNAL}"
 sudo mkdir -p "${DATA_DIR}"
 
-sudo groupadd fula
+getent group fula >/dev/null || sudo groupadd fula
 sudo usermod -a -G fula root
 sudo usermod -a -G fula ${USER}
 sudo chown root:fula "${EXTERNAL}"
