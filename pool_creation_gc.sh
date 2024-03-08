@@ -89,7 +89,15 @@ DATA_DIR="${EXTERNAL}/data"
 LOG_DIR="/var/log"
 USER_HOME="/home/${USER}"
 FULA_CONFIG="/home/${USER}/.fula/config.yaml"
+
+sudo mkdir -p "${EXTERNAL}"
 sudo mkdir -p "${DATA_DIR}"
+
+sudo groupadd server
+sudo usermod -a -G server root
+sudo usermod -a -G server ${USER}
+sudo chown root:server "${EXTERNAL}"
+sudo chmod 777 -R "${EXTERNAL}"
 
 # Function to map AWS region to your custom region naming convention
 get_region_name() {
