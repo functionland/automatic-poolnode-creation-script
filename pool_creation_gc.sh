@@ -103,7 +103,7 @@ sudo chmod 777 -R "${EXTERNAL}"
 get_region_name() {
     local aws_region=$1
     case $aws_region in
-        us-central1) echo "UsCentral1" ;;
+        us-central1) echo "UsEastOhio" ;;
         *) echo "" ;;
     esac
 }
