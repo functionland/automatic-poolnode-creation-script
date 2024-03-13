@@ -494,6 +494,9 @@ setup_gofula_service() {
     echo -n "$blox_peer_id" | sudo tee "$SECRET_DIR/node_peerid.txt" > /dev/null
     echo "Blox peer ID saved to $SECRET_DIR/node_peerid.txt"
 
+    sudo rm -rf /internal
+    sudo ln -s /home/pi /internal
+
     # Create the service file using the provided path
     sudo bash -c "cat > '$gofula_service_file_path'" << EOF
 [Unit]

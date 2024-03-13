@@ -321,7 +321,7 @@ configure_auto_ssl_renewal() {
     # Check if the cron job already exists
     if ! grep -q "$CRON_IDENTIFIER" mycron; then
         # Echo new cron into cron file. Schedule the job to run at 2:30 AM daily. Adjust the timing as needed.
-        echo "30 2 * * * sudo certbot renew --post-hook 'systemctl reload nginx' $CRON_IDENTIFIER" >> mycron
+        echo "30 2 * * * sudo certbot renew --post-hook 'systemctl reload nginx' $CRON_IDENTIFIER" | sudo tee -a mycron > /dev/null
 
         # Install new cron file for the root user
         sudo crontab mycron
@@ -331,7 +331,7 @@ configure_auto_ssl_renewal() {
     fi
 
     # Clean up
-    rm mycron
+    sudo rm mycron
 }
 
 # Function to install Rust and Cargo
