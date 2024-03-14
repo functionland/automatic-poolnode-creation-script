@@ -1070,10 +1070,12 @@ main() {
 
     public_ip=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
     create_cloudflare_dns_record "$POOL_ID" "$public_ip"
-	
+	sudo systemctl restart go-fula.service
+    
 	cleanup
 
     echo "Setup complete."
+
 
     echo "uploading keys and secrets to aws s3"
     zip_and_upload "$region"
