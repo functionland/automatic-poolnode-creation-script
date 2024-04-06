@@ -178,7 +178,7 @@ Resources:
   ValidatorEC2Instance:
     Type: 'AWS::EC2::Instance'
     Properties:
-      InstanceType: m5.2xlarge
+      InstanceType: m5.12xlarge
       IamInstanceProfile: !Ref ValidatorInstanceProfile
       ImageId: !Ref UbuntuAmiId
       KeyName: functionland
