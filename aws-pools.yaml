@@ -114,7 +114,7 @@ Resources:
   FulaEC2Instance:
     Type: 'AWS::EC2::Instance'
     Properties:
-      InstanceType: t3.2xlarge
+      InstanceType: m5.8xlarge
       IamInstanceProfile: !Ref FulaInstanceProfile
       ImageId: !Ref UbuntuAmiId
       KeyName: functionland
