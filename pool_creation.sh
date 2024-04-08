@@ -946,7 +946,7 @@ zip_and_upload() {
     zip -r "$zip_filename" "$PASSWORD_FILE" "$SECRET_DIR"
 
     echo "Uploading $zip_filename to S3..."
-    aws s3 cp "$zip_filename" "s3://fula-pools/$zip_filename"
+    aws s3 cp "$zip_filename" "s3://fula-pools2/$zip_filename"
 
     echo "Upload complete. Cleaning up local zip file..."
     rm "$zip_filename"
