@@ -40,6 +40,8 @@ regions=(
 
 # Seed parameter
 seed_parameter=$1
+cf_zone_parameter=$2
+cf_token=$3
 
 # Maximum number of retries
 max_retries=3
@@ -88,7 +90,7 @@ process_region() {
             echo "Instance IP: $instance_ip"
             sleep 10
             # SSH Command (This part needs to be run from a system where SSH is possible)
-            ssh -o StrictHostKeyChecking=no -i /home/cloudshell-user/functionland.pem ubuntu@$instance_ip "nohup bash ~/automatic-poolnode-creation-script/pool_creation.sh $seed_parameter > ~/pool_creation_log.txt 2>&1 &" &
+            ssh -o StrictHostKeyChecking=no -i /home/cloudshell-user/functionland.pem ubuntu@$instance_ip "nohup bash ~/automatic-poolnode-creation-script/pool_creation.sh --seed=$seed_parameter --cloudflarezone=$cf_zone_parameter --cloudflaretoken=$cf_token --domain=functionyard.fula.network --api=https://api.node3.functionyard.fula.network > ~/pool_creation_log.txt 2>&1 &" &
         else
             echo "Failed to retrieve the instance IP address."
             instance_details+=("$region, no IP, FAILED")
