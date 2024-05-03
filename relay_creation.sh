@@ -251,7 +251,7 @@ main() {
 	
     # Update and install dependencies
     sudo apt update
-    sudo apt install -y awscli zip wget git curl build-essential jq pkg-config libssl-dev protobuf-compiler llvm libclang-dev clang plocate cmake
+    sudo apt install -y zip wget git curl build-essential jq pkg-config libssl-dev protobuf-compiler llvm libclang-dev clang plocate cmake
 
     install_packages
 
