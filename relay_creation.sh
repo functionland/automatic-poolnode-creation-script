@@ -70,8 +70,6 @@ fi
 
 IDENTITY_FILE="/home/${USER}/identity.key"
 CONFIG_FILE="/home/${USER}/config.json"
-LOG_DIR="/var/log"
-USER_HOME="/home/${USER}"
 
 # Function to get the AWS Token
 get_aws_token() {
