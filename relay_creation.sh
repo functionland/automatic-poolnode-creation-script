@@ -119,7 +119,7 @@ clone_and_build() {
         git clone https://github.com/functionland/go-libp2p-relay-daemon.git  /home/${USER}/go-libp2p-relay-daemon
     fi
     cd /home/${USER}/go-libp2p-relay-daemon
-    go build -o go-libp2p-relay-daemon ./cmd/go-libp2p-relay-daemon
+    go build -o libp2p-relay-daemon ./cmd/libp2p-relay-daemon
     cd ..
 }
 
@@ -164,7 +164,7 @@ After=network.target
 [Service]
 Type=simple
 Environment=HOME=/home/$USER
-ExecStart=/home/$USER/go-libp2p-relay-daemon/go-libp2p-relay-daemon -config "${CONFIG_FILE}" -id "${IDENTITY_FILE}"
+ExecStart=/home/$USER/go-libp2p-relay-daemon/libp2p-relay-daemon -config "${CONFIG_FILE}" -id "${IDENTITY_FILE}"
 Restart=always
 RestartSec=10s
 StartLimitInterval=5min
