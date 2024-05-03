@@ -169,6 +169,8 @@ Restart=always
 RestartSec=10s
 StartLimitInterval=5min
 StartLimitBurst=4
+StandardOutput=journal
+StandardError=inherit
 
 [Install]
 WantedBy=multi-user.target
