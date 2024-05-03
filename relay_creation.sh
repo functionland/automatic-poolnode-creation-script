@@ -55,12 +55,10 @@ fi
 
 if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
     echo "missing CLOUDFLARE_API_TOKEN parameter."
-    usage
 fi
 
 if [ -z "$CLOUDFLARE_ZONE_ID" ]; then
     echo "missing CLOUDFLARE_ZONE_ID parameter."
-    usage
 fi
 
 if [ -z "$IDENTITY" ]; then
