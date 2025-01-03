@@ -373,6 +373,7 @@ clone_and_build() {
     sudo chmod -R 777 /home/${USER}/sugarfunge-node
 
     cd /home/${USER}/sugarfunge-node
+    rustup default 1.83.0
     cargo build --release
     cd ..
 }
