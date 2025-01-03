@@ -1,5 +1,5 @@
 #!/bin/bash
-//TODO: Also add setup for wss://node3 as it is not right now here
+#TODO: Also add setup for wss://node3 as it is not right now here
 set -e
 
 # Variables
