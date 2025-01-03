@@ -339,8 +339,8 @@ insert_keys() {
     sudo chmod -R 775 "$SECRET_DIR"
     sudo chmod -R 775 "$DATA_DIR"
     sudo chmod -R 775 "$USER_HOME/sugarfunge-node"
-    sudo chown -R ubuntu:ubuntu "$DATA_DIR"
-    sudo chown -R ubuntu:ubuntu "$USER_HOME/sugarfunge-node"
+    sudo chown -R ${USER}:${USER} "$DATA_DIR"
+    sudo chown -R ${USER}:${USER} "$USER_HOME/sugarfunge-node"
     secret_phrase=$(cat "$SECRET_DIR/secret_phrase.txt")
     sudo /home/$USER/sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --chain $USER_HOME/sugarfunge-node/customSpecRaw.json --scheme Sr25519 --suri "$secret_phrase" --password "$(cat "$PASSWORD_FILE")" --key-type aura
     sudo /home/$USER/sugarfunge-node/target/release/sugarfunge-node key insert --base-path="$DATA_DIR" --chain $USER_HOME/sugarfunge-node/customSpecRaw.json --scheme Ed25519 --suri "$secret_phrase" --password "$(cat "$PASSWORD_FILE")" --key-type gran
@@ -495,7 +495,8 @@ setup_gofula_service() {
     echo "Blox peer ID saved to $SECRET_DIR/node_peerid.txt"
 
     sudo rm -rf /internal
-    sudo ln -s /home/ubuntu /internal
+    sudo mkdir -p /home/${USER}
+    sudo ln -s /home/${USER} /internal
 
     # Create the service file using the provided path
     sudo bash -c "cat > '$gofula_service_file_path'" << EOF
