@@ -353,7 +353,7 @@ clone_and_build() {
     if [ ! -d "/home/${USER}/sugarfunge-node" ] || [ -z "$(ls -A /home/${USER}/sugarfunge-node)" ]; then
         sudo git clone https://github.com/functionland/sugarfunge-node.git /home/${USER}/sugarfunge-node
     fi
-    sudo chown -R ubuntu:ubuntu /home/${USER}/sugarfunge-node
+    sudo chown -R ${USER}:${USER} /home/${USER}/sugarfunge-node
     sudo chmod -R 777 /home/${USER}/sugarfunge-node
     cd /home/${USER}/sugarfunge-node
     cargo build --release
