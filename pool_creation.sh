@@ -229,7 +229,7 @@ install_rust() {
 # Function to pull the required Docker image and verify
 pull_docker_image_ipfs() {
     echo "Pulling the required Docker image ipfs..."
-    sudo docker pull ipfs/kubo:master-latest
+    sudo docker pull ipfs/kubo:release
 
     # Check if the image was pulled successfully
     if sudo docker images | grep -q 'ipfs/kubo'; then
