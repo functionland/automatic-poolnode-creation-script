@@ -675,7 +675,7 @@ setup_ipfs_service() {
 -v ${EXTERNAL}:/uniondrive:rw,shared \
 -v /home/${USER}/.fula:/internal:rw,shared \
 -v /home/${USER}/fula-ota/docker/fxsupport/linux/kubo:/container-init.d:rw,shared \
-ipfs/kubo:master-latest"
+ipfs/kubo:release"
     ENVIRONMENT="IPFS_PROFILE=server \
 ,IPFS_PATH=/internal/ipfs_data"
 
