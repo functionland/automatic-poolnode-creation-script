@@ -514,12 +514,31 @@ install_go() {
 
 # Function to clone and build repositories
 clone_and_build_node() {
-	echo "Installing sugarfunge-node"
+    echo "Installing sugarfunge-node"
+
+    # Automatically find and set LIBCLANG_PATH
+    echo "Searching for libclang.so..."
+    LIBCLANG_PATH=$(find /usr/lib -type f -name "libclang.so" -exec dirname {} \; | head -n 1)
+
+    if [ -n "$LIBCLANG_PATH" ]; then
+        echo "Found libclang.so at $LIBCLANG_PATH"
+        export LIBCLANG_PATH=$LIBCLANG_PATH
+        echo "LIBCLANG_PATH set to $LIBCLANG_PATH"
+    else
+        echo "Error: libclang.so not found. Please install Clang or set LIBCLANG_PATH manually."
+        return 1
+    fi
+
+    # Clone the sugarfunge-node repository if it doesn't exist or is empty
     if [ ! -d "/home/${USER}/sugarfunge-node" ] || [ -z "$(ls -A /home/${USER}/sugarfunge-node)" ]; then
         sudo git clone https://github.com/functionland/sugarfunge-node.git /home/${USER}/sugarfunge-node
     fi
+
+    # Set permissions for the cloned directory
     sudo chown -R ubuntu:ubuntu /home/${USER}/sugarfunge-node
     sudo chmod -R 777 /home/${USER}/sugarfunge-node
+
+    # Build the project using Cargo
     cd /home/${USER}/sugarfunge-node
     if [ -n "$RELEASE_FLAG" ]; then
         cargo build --release
@@ -528,6 +547,7 @@ clone_and_build_node() {
     fi
     cd ..
 }
+
 
 # Function to clone and build repositories
 clone_and_build_fula() {
