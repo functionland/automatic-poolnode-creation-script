@@ -669,14 +669,14 @@ setup_ipfs_service() {
     sudo touch /home/${USER}/.fula/.ipfs_setup
     # Debug mode service configuration
     EXEC_START="/usr/bin/docker run -u root --rm --name ipfs_host --network host \
--e IPFS_PROFILE=badgerds \
+-e IPFS_PROFILE=server \
 -e IPFS_PATH=/internal/ipfs_data \
 -v ${EXTERNAL}/ipfs_staging:/export:rw,shared \
 -v ${EXTERNAL}:/uniondrive:rw,shared \
 -v /home/${USER}/.fula:/internal:rw,shared \
 -v /home/${USER}/fula-ota/docker/fxsupport/linux/kubo:/container-init.d:rw,shared \
 ipfs/kubo:master-latest"
-    ENVIRONMENT="IPFS_PROFILE=badgerds \
+    ENVIRONMENT="IPFS_PROFILE=server \
 ,IPFS_PATH=/internal/ipfs_data"
 
     sudo bash -c "cat > '${ipfs_service_file_path}'" << EOF
