@@ -541,6 +541,7 @@ clone_and_build_node() {
 
     # Build the project using Cargo
     cd /home/${USER}/sugarfunge-node
+    rustup default 1.79.0
     if [ -n "$RELEASE_FLAG" ]; then
         cargo build --release
     else
