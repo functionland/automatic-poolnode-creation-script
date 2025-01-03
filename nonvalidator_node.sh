@@ -519,7 +519,7 @@ clone_and_build_node() {
 
     # Automatically find and set LIBCLANG_PATH
     echo "Searching for libclang.so..."
-    LIBCLANG_PATH=$(find /usr/lib -type f -name "libclang.so" -exec dirname {} \; | head -n 1)
+    LIBCLANG_PATH=$(find /usr/lib -name "libclang.so" -exec dirname {} \; | head -n 1)
 
     if [ -n "$LIBCLANG_PATH" ]; then
         echo "Found libclang.so at $LIBCLANG_PATH"
