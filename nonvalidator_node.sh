@@ -295,6 +295,7 @@ install_packages() {
     sudo apt-get install -y docker.io nginx software-properties-common certbot python3-certbot-nginx
     sudo apt-get install -y wget git curl build-essential jq pkg-config libssl-dev protobuf-compiler llvm libclang-dev clang plocate cmake
     sudo apt-get install -y g++ libx11-dev libasound2-dev libudev-dev libxkbcommon-x11-0
+    sudo apt install clang libclang-dev
     sudo systemctl start docker
     sudo systemctl enable docker
 }
